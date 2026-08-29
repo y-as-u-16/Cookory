@@ -8,6 +8,9 @@ actor InMemoryImageStorage: ImageStorage {
 
     var errorToThrow: DomainError?
 
+    /// 設定されている間、save はここで待たされる。
+    private var gate: AsyncGate?
+
     /// 保存時に返す寸法。実際のデコードはしないので固定値を返す。
     private let width: Int
     private let height: Int
@@ -18,6 +21,9 @@ actor InMemoryImageStorage: ImageStorage {
     }
 
     func save(_ data: Data) async throws -> PhotoAsset {
+        if let gate {
+            await gate.wait()
+        }
         try throwIfNeeded()
         let id = UUID()
         originals[id] = data
@@ -56,6 +62,36 @@ actor InMemoryImageStorage: ImageStorage {
     private func throwIfNeeded() throws {
         if let errorToThrow {
             throw errorToThrow
+        }
+    }
+}
+
+// MARK: - Blocking
+
+/// 保存を任意の時点まで止められるようにする。
+/// 二重送信の検証には、処理中の状態を観測できる必要がある。
+extension InMemoryImageStorage {
+    func setGate(_ gate: AsyncGate?) {
+        self.gate = gate
+    }
+}
+
+/// 明示的に開くまで待たせる同期プリミティブ。
+actor AsyncGate {
+    private var continuations: [CheckedContinuation<Void, Never>] = []
+    private var isOpen = false
+
+    func wait() async {
+        guard !isOpen else { return }
+        await withCheckedContinuation { continuations.append($0) }
+    }
+
+    func open() {
+        isOpen = true
+        let pending = continuations
+        continuations.removeAll()
+        for continuation in pending {
+            continuation.resume()
         }
     }
 }

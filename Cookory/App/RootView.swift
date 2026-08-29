@@ -30,7 +30,7 @@ private struct NavigationStackView: View {
 
     var body: some View {
         NavigationStack(path: $router.path) {
-            ContentView()
+            CaptureView(viewModel: CaptureViewModel(createMealRecord: container.createMealRecord))
                 .navigationDestination(for: AppRoute.self) { route in
                     destination(for: route)
                 }
