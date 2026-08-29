@@ -54,4 +54,20 @@ extension DependencyContainer {
     var createMealRecord: CreateMealRecordUseCase {
         CreateMealRecordUseCase(mealRepository: mealRepository, imageStorage: imageStorage)
     }
+
+    var assignDishToMeal: AssignDishToMealUseCase {
+        AssignDishToMealUseCase(mealRepository: mealRepository, dishRepository: dishRepository)
+    }
+
+    var updateMealRecord: UpdateMealRecordUseCase {
+        UpdateMealRecordUseCase(mealRepository: mealRepository, dishRepository: dishRepository)
+    }
+
+    var deleteMealRecord: DeleteMealRecordUseCase {
+        DeleteMealRecordUseCase(
+            mealRepository: mealRepository,
+            dishRepository: dishRepository,
+            imageStorage: imageStorage
+        )
+    }
 }
