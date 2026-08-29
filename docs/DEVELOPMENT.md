@@ -328,7 +328,7 @@ git add -A && git commit -m "feat: 料理記録の保存機能を追加"
 
 # 3. push して PR を作る
 git push -u origin feat/capture-usecase
-gh pr create --fill
+gh pr create --body "Closes #4"   # 紐づく Issue があれば必ず書く
 
 # 4. CI が緑になったらマージ（ブランチは同時に削除される）
 gh pr merge --squash --delete-branch
@@ -338,6 +338,27 @@ git switch main && git pull
 ```
 
 `--delete-branch` を必ず付ける。放置するとブランチ一覧が使い物にならなくなる。
+
+### Linking issues / Issue との紐づけ
+
+PR 本文に `Closes #N` を書く。マージすると Issue が自動でクローズされる。
+
+```bash
+gh pr create --title "feat: Domain Entity を定義" --body "Closes #4
+
+MealRecord / Dish / DishLog / PhotoAsset を追加した。"
+```
+
+複数の Issue を閉じる場合、**それぞれにキーワードが要る**。
+
+```
+Closes #4, closes #5     ← 両方閉じる
+Closes #4, #5            ← #4 しか閉じない
+```
+
+使えるキーワード: `Closes` / `Fixes` / `Resolves`（大文字小文字は不問）
+
+閉じずに参照だけしたいときはキーワードを付けずに `#4` と書く。
 
 ### Branch naming / ブランチ名
 
