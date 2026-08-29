@@ -110,11 +110,27 @@ export DEVELOPMENT_TEAM=<Team ID>
 export APP_STORE_CONNECT_KEY_ID=<Key ID>
 export APP_STORE_CONNECT_ISSUER_ID=<Issuer ID>
 export APP_STORE_CONNECT_API_KEY="$(cat AuthKey_XXXXX.p8)"
-export MATCH_GIT_URL=git@github.com:y-as-u-16/ios-certificates.git
 export MATCH_PASSWORD=<パスフレーズ>
+
+# 書き込みが必要なため HTTPS を使う（詳細は下の注記）
+export MATCH_GIT_URL=https://github.com/y-as-u-16/ios-certificates.git
 
 bundle exec fastlane setup_certificates
 ```
+
+
+### なぜローカルだけ HTTPS なのか
+
+`MATCH_GIT_URL` はローカル実行と CI で形式が異なる。
+
+| 実行場所 | URL 形式 | 認証 | 権限 |
+|---|---|---|---|
+| ローカル（`setup_certificates`） | HTTPS | `gh` の認証情報 | 書き込み可 |
+| CI（`beta`） | SSH | `MATCH_DEPLOY_KEY` | 読み取りのみ |
+
+証明書リポジトリの deploy key は **read only** で登録してある。CI に書き込みを許すと、Apple 側の証明書を再生成・失効させて他アプリの配信やローカル署名をまとめて壊しうるため。
+
+プロファイルの作成は書き込みを伴うので、権限を持つローカルから実行する。
 
 4. GitHub Secrets を登録
 
