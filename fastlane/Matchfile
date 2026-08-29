@@ -1,0 +1,14 @@
+git_url(ENV.fetch("MATCH_GIT_URL"))
+storage_mode("git")
+
+type("appstore")
+app_identifier(["com.egi-engineer.Cookory"])
+team_id(ENV.fetch("DEVELOPMENT_TEAM"))
+
+# BaseMatch と証明書リポジトリを共有するため、暗号化方式を揃える。
+force_legacy_encryption(true)
+
+# CI では既存の証明書を取得するだけに徹する。
+# 書き込みを許すと Apple 側の証明書を再生成・失効させ、
+# 他のアプリの CI やローカル署名をまとめて壊す可能性がある。
+readonly(ENV["CI"] == "true")

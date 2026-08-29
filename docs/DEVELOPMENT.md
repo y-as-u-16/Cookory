@@ -61,12 +61,13 @@ xcodebuild test \
 
 ## 3. CI / 継続的インテグレーション
 
-Two workflows run on every pull request to `main` and on pushes to `main`.
+Three workflows run on pull requests to `main` and on pushes to `main`.
 
 | Workflow | Runner | Purpose |
 |---|---|---|
 | [`ci.yml`](../.github/workflows/ci.yml) | `macos-26` | Build and run unit tests |
-| [`architecture.yml`](../.github/workflows/architecture.yml) | `ubuntu-latest` | Enforce dependency rules |
+| [`architecture.yml`](../.github/workflows/architecture.yml) | `ubuntu-latest` | Enforce dependency rules and block committed secrets |
+| [`cd.yml`](../.github/workflows/cd.yml) | `macos-26` | Deliver to TestFlight (push to `main` only) |
 
 The architecture check runs on Linux deliberately: it is a text-level check that
 needs no Xcode, and macOS runners consume the GitHub Actions free tier at **10x**
@@ -79,6 +80,81 @@ Both workflows skip documentation-only changes via `paths-ignore`, so editing a
 `.md` file does not burn CI minutes.
 
 ---
+
+## 3b. CD / 継続的デリバリー
+
+`main` への push で TestFlight へ配信する（[`cd.yml`](../.github/workflows/cd.yml)）。
+
+### 必要な GitHub Secrets
+
+| Secret | 共有可否 | 内容 |
+|---|---|---|
+| `APP_STORE_CONNECT_KEY_ID` | 他アプリと共有 | API キーの Key ID |
+| `APP_STORE_CONNECT_ISSUER_ID` | 他アプリと共有 | API キーの Issuer ID |
+| `APP_STORE_CONNECT_API_KEY` | 他アプリと共有 | `.p8` ファイルの中身 |
+| `MATCH_GIT_URL` | 他アプリと共有 | 証明書リポジトリの SSH URL |
+| `MATCH_PASSWORD` | 他アプリと共有 | match の暗号化パスフレーズ |
+| `MATCH_DEPLOY_KEY` | 他アプリと共有 | 証明書リポジトリ read 権限の SSH 秘密鍵 |
+| `DEVELOPMENT_TEAM` | 他アプリと共有 | Apple Developer Team ID |
+
+API キーと証明書は Apple Developer アカウント単位なので、同じアカウントの他アプリと使い回せる。アプリ固有なのはプロビジョニングプロファイルだけで、これは `setup_certificates` が作る。
+
+### 初回セットアップ
+
+1. Apple Developer で Bundle ID `com.egi-engineer.Cookory` を登録
+2. App Store Connect にアプリを作成
+3. ローカルで環境変数を設定し、証明書を作成する
+
+```bash
+export DEVELOPMENT_TEAM=<Team ID>
+export APP_STORE_CONNECT_KEY_ID=<Key ID>
+export APP_STORE_CONNECT_ISSUER_ID=<Issuer ID>
+export APP_STORE_CONNECT_API_KEY="$(cat AuthKey_XXXXX.p8)"
+export MATCH_GIT_URL=git@github.com:y-as-u-16/ios-certificates.git
+export MATCH_PASSWORD=<パスフレーズ>
+
+bundle exec fastlane setup_certificates
+```
+
+4. GitHub Secrets を登録
+
+```bash
+gh secret set APP_STORE_CONNECT_API_KEY -R y-as-u-16/Cookory < AuthKey_XXXXX.p8
+gh secret set DEVELOPMENT_TEAM -R y-as-u-16/Cookory
+# 以下同様
+```
+
+### なぜ Team ID を Secrets にするのか
+
+このリポジトリは公開されており、Fastfile も誰でも読める。Team ID は秘密鍵ではないが、公開物に識別子を書かない方針で一貫させている。
+
+同じ理由で `project.pbxproj` の `DEVELOPMENT_TEAM` は空にしてある。CD では `update_code_signing_settings` が署名前に注入する。
+
+### Xcode が DEVELOPMENT_TEAM を書き戻す問題
+
+自動署名が有効なため、**Xcode でプロジェクトを開くと `DEVELOPMENT_TEAM` に Team ID が書き戻される。** そのままコミットすると公開リポジトリに漏れる。
+
+```bash
+# Xcode で作業した後は確認する
+git diff Cookory.xcodeproj/project.pbxproj
+
+# 書き戻されていたら捨てる
+git checkout -- Cookory.xcodeproj/project.pbxproj
+```
+
+[`scripts/check-no-secrets.sh`](../scripts/check-no-secrets.sh) が CI で検出して落とすため、見落としても main には入らない。ただし PR が赤くなるので、push 前にローカルで確認する方が早い。
+
+### 踏んではいけない罠
+
+| 罠 | 対処 |
+|---|---|
+| `macos-15` だと ASC が iOS 26 SDK 必須で 409 を返す | `runs-on: macos-26` を使う |
+| CI で match がロック解除ダイアログを待ち無限ハングする | `setup_ci if is_ci` を先に呼ぶ |
+| ビルド番号を CI 実行回数から採ると re-run で重複し弾かれる | `latest_testflight_build_number + 1` を使う |
+| TestFlight に1件も無いと採番が例外になる | `initial_build_number: 0` を指定 |
+| fastlane の標準出力にログが混ざり値が取れない | `BUILD_NUMBER_OUTPUT` でファイル経由にする |
+| 秘密鍵がログに出る | `set -x` を使わない。確認は `wc -c` で |
+| 配信が二重に走りビルド番号が衝突する | `concurrency: cd-testflight` / `cancel-in-progress: false` |
 
 ## 4. Architecture enforcement / アーキテクチャの強制
 

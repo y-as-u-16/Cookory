@@ -1,10 +1,10 @@
-# Architecture Rules / アーキテクチャ規約検査
+# Guards / 規約と機密情報の検査
 #
 # Runs on Linux, not macOS: this is a text-level check needing no Xcode, and
 # macOS runners bill at 10x the free-tier rate.
 # Xcode 不要のテキスト検査なので Linux で実行する。macOS ランナーは無料枠を
 # 10 倍消費するため。
-name: Architecture
+name: Guards
 
 on:
   pull_request:
@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rules:
-    name: Dependency Rules
+  checks:
+    name: Architecture & Secrets
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -28,3 +28,6 @@ jobs:
 
       - name: Check architecture rules
         run: ./scripts/check-architecture.sh
+
+      - name: Check for committed secrets
+        run: ./scripts/check-no-secrets.sh

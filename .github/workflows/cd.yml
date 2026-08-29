@@ -1,0 +1,134 @@
+# CD (TestFlight) / TestFlight 配信
+#
+# Delivers to TestFlight on every push to main. Manual runs are also allowed.
+# main への push で TestFlight へ配信する。手動実行も残しておく。
+#
+# Note: workflow_dispatch does not appear in the UI until this file exists on
+# the default branch.
+# ※ workflow_dispatch はデフォルトブランチにこのファイルが無いと選択肢に
+#   出ない仕様のため、main へマージするまで手動実行ボタンは現れない。
+name: CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'scripts/**'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/architecture.yml'
+
+# Two concurrent deliveries would collide on the build number. A delivery that
+# has started must finish: cancelling mid-upload leaves TestFlight half-done.
+# 配信が二重に走るとビルド番号が衝突するため同時実行させない。アップロード
+# 途中でキャンセルすると TestFlight に中途半端な状態が残るので、走り始めた
+# 配信は最後まで走らせる。
+concurrency:
+  group: cd-testflight
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    name: iOS → TestFlight
+    # macos-15 will not work: its default Xcode 16.4 (iOS 18.5 SDK) is rejected
+    # by App Store Connect with a 409, which requires the iOS 26 SDK or later.
+    # macos-15 は使えない。既定の Xcode 16.4（iOS 18.5 SDK）でビルドすると
+    # App Store Connect が「iOS 26 SDK 以降が必須」として 409 で弾く。
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      # fastlane garbles output or crashes when these are unset.
+      # fastlane は未設定だと文字化けやクラッシュを起こす。
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      # Kept out of the repository: this project ships with an empty
+      # DEVELOPMENT_TEAM so that anyone can build it without a signing identity.
+      # リポジトリには置かない。誰でも署名なしでビルドできるよう
+      # DEVELOPMENT_TEAM を空にして公開しているため。
+      DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+      FASTLANE_SKIP_UPDATE_CHECK: 1
+      FASTLANE_HIDE_CHANGELOG: 1
+      FASTLANE_OPT_OUT_USAGE: 1
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # ruby-version comes from .ruby-version so that local and CI resolve
+      # Gemfile.lock identically.
+      # ruby-version は .ruby-version から読まれる。ローカルと CI で同じ Ruby を
+      # 使い、Gemfile.lock の解決結果を一致させるため。
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      # The certificate repository is private, so fetch it over SSH.
+      # 証明書リポジトリは private なので SSH 鍵で取得する。
+      #
+      # Never add `set -x` here. GitHub's secret masking only matches exact
+      # strings, so a key expanded inside a heredoc is printed unmasked.
+      # Inspect with `ls -la` or `wc -c`, never `cat`.
+      # このステップに `set -x` を絶対に足さないこと。GitHub の Secret マスクは
+      # 完全一致にしか効かず、ヒアドキュメントで展開された鍵の中身はマスクされず
+      # ログに出る。確認したいときも `cat` せず `ls -la` や `wc -c` で見ること。
+      - name: match 用の deploy key を配置
+        env:
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$MATCH_DEPLOY_KEY" > ~/.ssh/match_deploy_key
+          chmod 600 ~/.ssh/match_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/match_deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: ビルド番号を決定
+        id: build_number
+        env:
+          BUILD_NUMBER_OUTPUT: ${{ runner.temp }}/build_number
+        run: |
+          # 標準出力は fastlane 自身のログが混ざるため、値はファイルで受け取る。
+          bundle exec fastlane next_build_number
+          NUMBER=$(cat "$BUILD_NUMBER_OUTPUT")
+          # 想定外の値でビルドが進まないよう、数値であることを確認する
+          if ! [[ "$NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::ビルド番号の採番に失敗しました: $NUMBER"
+            exit 1
+          fi
+          echo "value=$NUMBER" >> "$GITHUB_OUTPUT"
+          echo "採番したビルド番号: $NUMBER"
+
+      - name: ビルドして TestFlight へアップロード
+        env:
+          BUILD_NUMBER: ${{ steps.build_number.outputs.value }}
+        run: bundle exec fastlane beta
+
+      # GitHub-hosted runners are disposable, but leaving no key behind matters
+      # once this moves to a self-hosted runner.
+      # GitHub-hosted は使い捨て VM だが、ログや後続ステップに鍵が残らないように
+      # する。セルフホストへ移行したときに必須になるため最初から入れておく。
+      - name: 後始末
+        if: ${{ always() }}
+        run: |
+          security delete-keychain "$RUNNER_TEMP/fastlane_tmp_keychain-db" || true
+          rm -f ~/.ssh/match_deploy_key ~/.ssh/config

@@ -1,0 +1,5 @@
+app_identifier("com.egi-engineer.Cookory")
+
+# 公開リポジトリのため Team ID は環境変数から読む。
+# ローカル実行時は .env.fastlane（gitignore 済み）から供給される。
+team_id(ENV.fetch("DEVELOPMENT_TEAM"))

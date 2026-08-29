@@ -59,6 +59,13 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+fastlane/README.md
+
+# Fastlane の環境変数（Team ID を含むため公開しない）
+.env.fastlane
+
+# build_app の出力
+build/ipa/
 
 # ==============================================================================
 # Test / Coverage artifacts
