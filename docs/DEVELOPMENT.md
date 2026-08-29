@@ -311,6 +311,54 @@ Types: `feat` / `fix` / `refactor` / `docs` / `test` / `chore` / `perf` / `ci`
 
 ---
 
+
+## 8b. Branch workflow / ブランチ運用
+
+`main` is protected: direct pushes are rejected, so every change goes through a
+pull request.
+
+`main` は保護されており直接 push できない。変更は必ず PR を経由する。
+
+```bash
+# 1. ブランチを切る
+git switch -c feat/capture-usecase
+
+# 2. 作業してコミット
+git add -A && git commit -m "feat: 料理記録の保存機能を追加"
+
+# 3. push して PR を作る
+git push -u origin feat/capture-usecase
+gh pr create --fill
+
+# 4. CI が緑になったらマージ（ブランチは同時に削除される）
+gh pr merge --squash --delete-branch
+
+# 5. ローカルを追従させる
+git switch main && git pull
+```
+
+`--delete-branch` を必ず付ける。放置するとブランチ一覧が使い物にならなくなる。
+
+### Branch naming / ブランチ名
+
+コミットの type をそのまま接頭辞に使う。
+
+```
+feat/dish-history       機能追加
+fix/thumbnail-rotation  バグ修正
+refactor/meal-repo      リファクタ
+docs/architecture       ドキュメント
+chore/ci-cache          雑務
+```
+
+### Why PRs for a solo project / 個人開発でも PR を通す理由
+
+- **CD が `main` への push で発火する。** 壊れたコードが直接入ると即座に TestFlight へ配信される
+- CI と Guards が PR 上で走るので、`main` に入る前に規約違反や機密混入を止められる
+- 差分をまとめて見返せる。3か月後の自分にとっての記録になる
+
+管理者は保護をすり抜けて直接 push できるが、緊急時の逃げ道として残しているだけで、通常は使わない。
+
 ## 9. Before publishing / 公開前の確認
 
 This repository is public. Before every push, confirm:
