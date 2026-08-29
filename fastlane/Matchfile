@@ -1,6 +1,9 @@
 git_url(ENV.fetch("MATCH_GIT_URL"))
 storage_mode("git")
 
+# match の既定は master。ブランチが分岐しないよう main に固定する。
+git_branch("main")
+
 type("appstore")
 app_identifier(["com.egi-engineer.Cookory"])
 team_id(ENV.fetch("DEVELOPMENT_TEAM"))
