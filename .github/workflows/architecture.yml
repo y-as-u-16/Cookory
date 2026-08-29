@@ -1,0 +1,30 @@
+# Architecture Rules / アーキテクチャ規約検査
+#
+# Runs on Linux, not macOS: this is a text-level check needing no Xcode, and
+# macOS runners bill at 10x the free-tier rate.
+# Xcode 不要のテキスト検査なので Linux で実行する。macOS ランナーは無料枠を
+# 10 倍消費するため。
+name: Architecture
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: architecture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rules:
+    name: Dependency Rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check architecture rules
+        run: ./scripts/check-architecture.sh

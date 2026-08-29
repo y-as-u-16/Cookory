@@ -1,0 +1,90 @@
+# Build & Test / ビルドとテスト
+#
+# Runs on every pull request to main and on direct pushes to main.
+# main への PR、および main への直接 push で実行する。
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '**/*.png'
+      - '**/*.jpg'
+      - '**/*.svg'
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '**/*.png'
+      - '**/*.jpg'
+      - '**/*.svg'
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to save free-tier minutes.
+# 同一 ref の古い実行を打ち切り、無料枠の消費を抑える。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      SCHEME: Cookory
+      PROJECT: Cookory.xcodeproj
+      # Simulator signing resolves automatically. Setting CODE_SIGNING_ALLOWED=NO
+      # prevents the .xctest bundle from loading and fails with TEST EXECUTE FAILED.
+      # シミュレータ向けは署名が自動解決される。CODE_SIGNING_ALLOWED=NO を指定すると
+      # .xctest バンドルがロードできず TEST EXECUTE FAILED になるため指定しない。
+      DESTINATION: 'platform=iOS Simulator,name=iPhone 17 Pro'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Show toolchain versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      # Installed explicitly: the runner image's preinstalled tools change
+      # without notice, and a missing binary would break the log pipeline.
+      # ランナー同梱ツールは予告なく変わり、欠けるとログ整形が壊れるため明示導入する。
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "$DESTINATION" \
+            | xcbeautify
+
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "$DESTINATION" \
+            -only-testing:CookoryTests \
+            -resultBundlePath TestResults.xcresult \
+            | xcbeautify
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          retention-days: 7
