@@ -1,6 +1,10 @@
 default_platform(:ios)
 
 APP_IDENTIFIER = "com.egi-engineer.Cookory".freeze
+
+# 自動配布先の内部テスターグループ。App Store Connect の
+# 「App Store Connect Users」グループは全アカウントに既定で存在する。
+INTERNAL_TESTER_GROUPS = ["App Store Connect Users"].freeze
 PROJECT = "Cookory.xcodeproj".freeze
 SCHEME = "Cookory".freeze
 
@@ -102,9 +106,14 @@ platform :ios do
       app_identifier: APP_IDENTIFIER,
       # 暗号化に関する輸出コンプライアンス。外部通信をしないアプリなので false。
       uses_non_exempt_encryption: false,
-      # 処理完了を待つと macOS ランナーの課金が伸びる。
-      # 失敗した場合は App Store Connect からメールで通知される。
-      skip_waiting_for_build_processing: true,
+      # 内部テスターへ自動で配布する。指定しないと App Store Connect で
+      # 毎回ビルドを手動選択することになる。
+      distribute_external: false,
+      groups: INTERNAL_TESTER_GROUPS,
+      # 配布するには処理完了を待つ必要がある。待たずに配布先だけ渡しても
+      # 「処理中」で無視され、結局手動選択に戻る。macOS ランナーの課金は
+      # 数分伸びるが、毎回の手作業と取り違えのほうが高くつく。
+      skip_waiting_for_build_processing: false,
     )
 
     # 署名設定の書き換えをコミットさせない。公開リポジトリに Team ID が
