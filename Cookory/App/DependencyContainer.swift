@@ -1,0 +1,57 @@
+import Foundation
+
+/// Composition Root。依存の組み立てはここに集約する。
+///
+/// DI フレームワークを使わないのは、依存が 3 つしかない段階では
+/// 設定コストが得られるものを上回るため（ARCHITECTURE.md #36）。
+struct DependencyContainer: Sendable {
+    let mealRepository: MealRecordRepository
+    let dishRepository: DishRepository
+    let imageStorage: ImageStorage
+
+    init(
+        mealRepository: MealRecordRepository,
+        dishRepository: DishRepository,
+        imageStorage: ImageStorage
+    ) {
+        self.mealRepository = mealRepository
+        self.dishRepository = dishRepository
+        self.imageStorage = imageStorage
+    }
+}
+
+extension DependencyContainer {
+    /// 本番構成。ディスクに永続化する。
+    static func live() throws -> DependencyContainer {
+        let store = try SwiftDataStore.makePersistent()
+        return DependencyContainer(
+            mealRepository: SwiftDataMealRecordRepository(store: store),
+            dishRepository: SwiftDataDishRepository(store: store),
+            imageStorage: try LocalImageStorage()
+        )
+    }
+
+    /// プレビューとテスト用。プロセス終了で消える。
+    ///
+    /// 画像だけは実ファイルを書く。SwiftUI プレビューで実際に写真を
+    /// 表示できるようにするため、一時ディレクトリへ逃がしている。
+    static func inMemory() throws -> DependencyContainer {
+        let store = try SwiftDataStore.makeInMemory()
+        let imageRoot = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("Cookory-\(UUID().uuidString)", isDirectory: true)
+        return DependencyContainer(
+            mealRepository: SwiftDataMealRecordRepository(store: store),
+            dishRepository: SwiftDataDishRepository(store: store),
+            imageStorage: try LocalImageStorage(
+                originalsDirectory: imageRoot.appendingPathComponent("originals"),
+                thumbnailsDirectory: imageRoot.appendingPathComponent("thumbnails")
+            )
+        )
+    }
+}
+
+extension DependencyContainer {
+    var createMealRecord: CreateMealRecordUseCase {
+        CreateMealRecordUseCase(mealRepository: mealRepository, imageStorage: imageStorage)
+    }
+}
