@@ -163,8 +163,8 @@ struct ExportDataUseCaseTests {
 
         _ = try await useCase.execute { recorder.record($0) }
 
-        #expect(await recorder.last == 1.0)
-        #expect(await recorder.isMonotonic)
+        #expect(recorder.last == 1.0)
+        #expect(recorder.isMonotonic)
     }
 
     /// 写真 1 枚の失敗で書き出し全体を止めない。記録本体を救うほうが損失が小さい。
@@ -182,31 +182,29 @@ struct ExportDataUseCaseTests {
     }
 }
 
-/// 進捗の記録用。順序が単調であることを確認する。
-private actor ProgressRecorderStorage {
-    var values: [Double] = []
-    func append(_ value: Double) { values.append(value) }
-}
-
+/// 進捗の記録用。
+///
+/// Task を挟むと記録の完了を待つ必要が生まれ、待ち時間の見積もりで
+/// テストが不安定になる。ロックで同期的に積む。
 private final class ProgressRecorder: @unchecked Sendable {
-    private let storage = ProgressRecorderStorage()
+    private let lock = NSLock()
+    private var values: [Double] = []
 
     func record(_ value: Double) {
-        Task { await storage.append(value) }
+        lock.lock()
+        defer { lock.unlock() }
+        values.append(value)
     }
 
     var last: Double? {
-        get async {
-            // Task の完了を待つ。
-            try? await Task.sleep(for: .milliseconds(50))
-            return await storage.values.last
-        }
+        lock.lock()
+        defer { lock.unlock() }
+        return values.last
     }
 
     var isMonotonic: Bool {
-        get async {
-            let values = await storage.values
-            return zip(values, values.dropFirst()).allSatisfy { $0 <= $1 }
-        }
+        lock.lock()
+        defer { lock.unlock() }
+        return zip(values, values.dropFirst()).allSatisfy { $0 <= $1 }
     }
 }
