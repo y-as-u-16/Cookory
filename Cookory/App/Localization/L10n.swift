@@ -145,6 +145,7 @@ enum L10n {
     static var errorDishNameRequired: LocalizedStringResource { t("error.dishNameRequired") }
     static var errorNoPhoto: LocalizedStringResource { t("error.noPhoto") }
     static var errorNotFound: LocalizedStringResource { t("error.notFound") }
+    static var errorExport: LocalizedStringResource { t("error.export") }
     static var loadFailedTitle: LocalizedStringResource { t("error.load.title") }
     static var loadFailedDescription: LocalizedStringResource { t("error.load.description") }
 }

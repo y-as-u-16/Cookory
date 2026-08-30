@@ -7,7 +7,7 @@ final class HomeViewModel {
     enum State: Equatable {
         case loading
         case loaded(HomeContent)
-        case failed(String)
+        case failed(LocalizedStringResource)
     }
 
     private(set) var state: State = .loading
@@ -30,7 +30,7 @@ final class HomeViewModel {
         do {
             state = .loaded(try await getHomeContent.execute(now: now))
         } catch {
-            state = .failed("読み込めませんでした。もう一度お試しください。")
+            state = .failed(L10n.errorLoad)
         }
     }
 }

@@ -124,6 +124,6 @@ struct SearchViewModelTests {
         await viewModel.search()
 
         #expect(viewModel.errorMessage != nil)
-        #expect(viewModel.errorMessage?.contains("DomainError") == false)
+        #expect(viewModel.errorMessage.map { !String(localized: $0).contains("DomainError") } == true)
     }
 }

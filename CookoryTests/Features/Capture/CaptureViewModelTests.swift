@@ -47,7 +47,7 @@ struct CaptureViewModelTests {
 
         await viewModel.save(images: [image])
 
-        #expect(viewModel.state == .failed("写真を保存できませんでした。空き容量をご確認ください。"))
+        #expect(viewModel.state == .failed(L10n.errorImageStorage))
     }
 
     @Test func 記録の保存に失敗するとfailedになる() async {
@@ -57,7 +57,7 @@ struct CaptureViewModelTests {
 
         await viewModel.save(images: [image])
 
-        #expect(viewModel.state == .failed("記録を保存できませんでした。もう一度お試しください。"))
+        #expect(viewModel.state == .failed(L10n.errorSave))
     }
 
     /// 内部表現をそのまま見せない。利用者が読んで行動できる文言にする。
@@ -72,8 +72,8 @@ struct CaptureViewModelTests {
             Issue.record("failed になっていません")
             return
         }
-        #expect(!message.contains("DomainError"))
-        #expect(!message.contains("imageStorageFailed"))
+        #expect(!String(localized: message).contains("DomainError"))
+        #expect(!String(localized: message).contains("imageStorageFailed"))
     }
 
     @Test func resetでidleに戻る() async {

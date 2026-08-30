@@ -49,7 +49,7 @@ struct MealDetailViewModelTests {
             Issue.record("failed になっていません")
             return
         }
-        #expect(!message.contains("DomainError"))
+        #expect(!String(localized: message).contains("DomainError"))
     }
 
     @Test func メモを保存できる() async throws {

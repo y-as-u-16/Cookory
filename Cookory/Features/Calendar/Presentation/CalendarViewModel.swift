@@ -7,7 +7,7 @@ final class CalendarViewModel {
     private(set) var summaries: [CalendarDaySummary] = []
     private(set) var selectedDayMeals: [MealRecord] = []
     private(set) var selectedDate: Date?
-    private(set) var errorMessage: String?
+    private(set) var errorMessage: LocalizedStringResource?
 
     /// 表示中の月の 1 日。
     private(set) var displayedMonth: Date
@@ -30,7 +30,7 @@ final class CalendarViewModel {
             summaries = try await query.daySummaries(year: year, month: month, calendar: calendar)
             errorMessage = nil
         } catch {
-            errorMessage = "読み込めませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorLoad
         }
     }
 
@@ -55,7 +55,7 @@ final class CalendarViewModel {
             errorMessage = nil
         } catch {
             selectedDayMeals = []
-            errorMessage = "読み込めませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorLoad
         }
     }
 

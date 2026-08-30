@@ -7,7 +7,7 @@ final class DishDetailViewModel {
     enum State: Equatable {
         case loading
         case loaded(DishHistory)
-        case failed(String)
+        case failed(LocalizedStringResource)
     }
 
     private(set) var state: State = .loading
@@ -38,7 +38,7 @@ final class DishDetailViewModel {
         do {
             shareImage = ShareImage(data: try await shareDish.execute(dishID: dishID))
         } catch {
-            state = .failed(String(localized: L10n.errorGeneric))
+            state = .failed(L10n.errorGeneric)
         }
     }
 
@@ -55,7 +55,7 @@ final class DishDetailViewModel {
         do {
             state = .loaded(try await getDishHistory.execute(dishID: dishID))
         } catch {
-            state = .failed("読み込めませんでした。もう一度お試しください。")
+            state = .failed(L10n.errorLoad)
         }
     }
 
@@ -65,7 +65,7 @@ final class DishDetailViewModel {
             let updated = try await getDishHistory.toggleFavorite(dishID: dishID)
             state = .loaded(DishHistory(dish: updated, entries: history.entries))
         } catch {
-            state = .failed("変更を保存できませんでした。もう一度お試しください。")
+            state = .failed(L10n.errorSave)
         }
     }
 }
