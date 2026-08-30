@@ -16,6 +16,7 @@ struct CalendarView: View {
         ScrollView {
             VStack(spacing: 20) {
                 monthHeader
+                weekdayHeader
                 grid
                 if let message = viewModel.errorMessage {
                     Text(message).font(.footnote).foregroundStyle(.secondary)
@@ -43,8 +44,20 @@ struct CalendarView: View {
         }
     }
 
+    private var weekdayHeader: some View {
+        LazyVGrid(columns: Self.columns, spacing: 0) {
+            ForEach(viewModel.weekdaySymbols, id: \.self) { symbol in
+                Text(symbol).font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private var grid: some View {
         LazyVGrid(columns: Self.columns, spacing: 8) {
+            // 月初を正しい曜日の位置から始める。
+            ForEach(0..<viewModel.leadingBlankCount, id: \.self) { _ in
+                Color.clear.frame(height: 56)
+            }
             ForEach(viewModel.daysInDisplayedMonth, id: \.self) { day in
                 Button {
                     Task { await viewModel.select(day) }

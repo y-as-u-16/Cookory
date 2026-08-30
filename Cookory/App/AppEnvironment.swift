@@ -44,4 +44,19 @@ final class AppEnvironment {
             state = .failed
         }
     }
+
+    /// 組み立て後、必要ならデモデータを入れてから ready にする。
+    ///
+    /// 先に ready にすると Home が投入前に読み込みを始め、空の画面が撮れる。
+    func start(using build: () throws -> DependencyContainer = { try DependencyContainer.live() }) async {
+        do {
+            let container = try build()
+            if DemoDataSeeder.isRequested {
+                try? await DemoDataSeeder(container: container).seed()
+            }
+            state = .ready(container)
+        } catch {
+            state = .failed
+        }
+    }
 }

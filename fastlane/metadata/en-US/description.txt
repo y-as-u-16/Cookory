@@ -1,0 +1,33 @@
+Cookory is a simple app for keeping a photo record of the meals you cook.
+
+■ Recording takes one tap
+No dish name required, no rating required. The moment you pick a photo, the record is saved. Add the dish name and notes later, when you have a moment. The app is built around "record now, organize later."
+
+■ Your cookbook grows on its own
+Recorded dishes gather into a cookbook automatically. Cook karaage twelve times and it stays one entry — with "Cooked 12 times" next to it. Only the dishes you actually made appear.
+
+■ See a dish get better over time
+Open a dish and its cooking history appears in order.
+
+2026/08/29 ★★★★★ More potato starch made it crispier
+2026/08/12 ★★★★☆ A little too salty
+2026/07/15 ★★★☆☆ Tried double frying
+
+Knowing how last time went helps the next time.
+
+■ A calendar made of your photos
+Your meal photos fill a monthly calendar. Tap a date to see what you cooked that day.
+
+■ Remember the dishes you have not made in a while
+The home screen surfaces dishes you have not cooked recently, so good ones do not quietly disappear from the rotation.
+
+■ Search by dish name or note
+Search covers both dish names and the notes you wrote.
+
+■ Everything stays on your device
+Photos and notes are never transmitted anywhere. The app performs no network communication, works fully offline, and requires no account.
+
+■ Take your data with you
+Export every record as a ZIP from Settings. Photos and JSON are included, so you can keep your data before switching devices or deleting the app.
+
+A cooking log you can actually keep up with.

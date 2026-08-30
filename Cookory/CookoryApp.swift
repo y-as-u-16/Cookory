@@ -9,7 +9,7 @@ struct CookoryApp: App {
             RootView()
                 .environment(environment)
                 .task {
-                    environment.bootstrap()
+                    await environment.start()
                 }
         }
     }

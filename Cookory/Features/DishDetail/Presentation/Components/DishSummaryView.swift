@@ -9,6 +9,7 @@ struct DishSummaryView: View {
                 .frame(maxWidth: .infinity)
             Text("\(history.cookCount)回作りました")
                 .font(.title3.weight(.semibold))
+                .accessibilityIdentifier("dishCookCount")
             if let lastCookedAt = history.lastCookedAt {
                 Text("最終 \(lastCookedAt.formatted(date: .numeric, time: .omitted))")
                     .font(.subheadline)

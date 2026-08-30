@@ -187,9 +187,10 @@
 				};
 			};
 			buildConfigurationList = 7C47E61A3042C614009BD07E /* Build configuration list for PBXProject "Cookory" */;
-			developmentRegion = en;
+			developmentRegion = ja;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				ja,
 				en,
 				Base,
 			);

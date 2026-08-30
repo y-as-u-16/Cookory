@@ -113,3 +113,73 @@ struct CalendarViewModelTests {
         #expect(viewModel.errorMessage?.contains("DomainError") == false)
     }
 }
+
+@MainActor
+struct CalendarLayoutTests {
+    private var tokyo: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        calendar.firstWeekday = 1
+        return calendar
+    }
+
+    private func date(_ iso: String) throws -> Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        formatter.timeZone = tokyo.timeZone
+        return try #require(formatter.date(from: iso))
+    }
+
+    /// 空きマスが無いと 1 日が常に左端に来て、曜日と日付がずれる。
+    @Test func 月初の曜日に合わせて空きマスが入る() throws {
+        // 2026-08-01 は土曜日。日曜始まりなら空きマスは 6 つ。
+        let viewModel = CalendarViewModel(
+            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+        )
+
+        #expect(viewModel.leadingBlankCount == 6)
+    }
+
+    @Test func 月初が週の先頭なら空きマスは0() throws {
+        // 2026-11-01 は日曜日。
+        let viewModel = CalendarViewModel(
+            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-11-15 12:00")
+        )
+
+        #expect(viewModel.leadingBlankCount == 0)
+    }
+
+    /// firstWeekday はロケールで変わる。月曜始まりでも並びが崩れないこと。
+    @Test func 月曜始まりでも空きマスが合う() throws {
+        var mondayFirst = tokyo
+        mondayFirst.firstWeekday = 2
+        let viewModel = CalendarViewModel(
+            query: StubCalendarMealQuery(), calendar: mondayFirst, now: try date("2026-08-15 12:00")
+        )
+
+        // 土曜日は月曜始まりで 6 番目。空きマスは 5 つ。
+        #expect(viewModel.leadingBlankCount == 5)
+    }
+
+    @Test func 曜日の見出しは7つある() throws {
+        let viewModel = CalendarViewModel(
+            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+        )
+
+        #expect(viewModel.weekdaySymbols.count == 7)
+    }
+
+    @Test func 曜日の見出しはfirstWeekdayから始まる() throws {
+        var mondayFirst = tokyo
+        mondayFirst.firstWeekday = 2
+        let sundayFirst = CalendarViewModel(
+            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+        )
+        let mondayStart = CalendarViewModel(
+            query: StubCalendarMealQuery(), calendar: mondayFirst, now: try date("2026-08-15 12:00")
+        )
+
+        #expect(sundayFirst.weekdaySymbols.first != mondayStart.weekdaySymbols.first)
+        #expect(Set(sundayFirst.weekdaySymbols) == Set(mondayStart.weekdaySymbols))
+    }
+}
