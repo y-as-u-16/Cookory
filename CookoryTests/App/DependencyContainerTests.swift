@@ -35,7 +35,7 @@ struct DependencyContainerTests {
         let container = try DependencyContainer.inMemory()
 
         let meal = try await container.createMealRecord.execute(
-            image: makeJPEG(), occurredAt: Date()
+            images: [makeJPEG()], occurredAt: Date()
         )
 
         #expect(try await container.mealRepository.find(id: meal.id) != nil)

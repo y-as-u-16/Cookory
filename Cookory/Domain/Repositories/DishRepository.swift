@@ -29,4 +29,11 @@ protocol DishRepository: Sendable {
     func save(_ log: DishLog) async throws
 
     func deleteLog(id: UUID) async throws
+
+    /// 料理の作り方。Dish の集約に含まれるため同じ窓口で扱う。
+    func findRecipe(dishID: UUID) async throws -> Recipe?
+
+    func save(_ recipe: Recipe) async throws
+
+    func deleteRecipe(dishID: UUID) async throws
 }
