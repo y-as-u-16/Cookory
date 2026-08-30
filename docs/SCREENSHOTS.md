@@ -82,3 +82,32 @@ fastlane では入らないため、初回は手で設定する。
 - DSA トレーダーステータス（個人開発なら非トレーダー）
 - 審査担当者向けの連絡先
 - ビルドの選択
+
+## 3. App Store Connect へ登録する
+
+### 認証情報
+
+```bash
+export APP_STORE_CONNECT_KEY_ID="..."
+export APP_STORE_CONNECT_ISSUER_ID="..."
+export APP_STORE_CONNECT_API_KEY="$(cat /path/to/AuthKey_XXXX.p8)"
+```
+
+### 掲載テキスト
+
+```bash
+bundle exec fastlane upload_text_only
+```
+
+### スクリーンショット
+
+```bash
+bundle exec ruby tools/appstore/sync_screenshots.rb
+```
+
+**fastlane の `deliver` でスクショを送らないこと。** `overwrite_screenshots` は
+削除直後にアップロードを始めるため、ASC 側の反映が間に合わず「アップロード
+されていない」と誤判定してリトライし、毎回二重に登録される。
+
+`sync_screenshots.rb` は 削除 → 0 枚になるまで待機 → アップロード → 検証 を
+順に行うため、この問題が起きない。

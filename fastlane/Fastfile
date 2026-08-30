@@ -115,4 +115,35 @@ platform :ios do
     # 紛れ込むのを防ぐため、CI では毎回捨てる。
     reset_git_repo(files: [PROJECT], force: true) if is_ci
   end
+
+  desc "掲載テキストとスクリーンショットをまとめて更新する"
+  lane :upload_metadata do
+    deliver(
+      api_key: asc_api_key,
+      # ビルドは CD が TestFlight へ上げるため、ここでは触らない。
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      skip_metadata: false,
+    )
+  end
+
+  desc "掲載テキストだけを更新する（スクショは触らない）"
+  desc "文言の微調整を繰り返すときはこちらが速い。"
+  lane :upload_text_only do
+    deliver(
+      api_key: asc_api_key,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false,
+    )
+  end
+
+  desc "スクリーンショットだけを更新する"
+  desc "deliver ではなく tools/appstore/sync_screenshots.rb を使うこと。"
+  desc "deliver の overwrite_screenshots は削除の反映を待たずに送り、毎回二重に登録される。"
+  lane :upload_screenshots_only do
+    UI.user_error!(
+      "bundle exec ruby tools/appstore/sync_screenshots.rb を使ってください"
+    )
+  end
 end

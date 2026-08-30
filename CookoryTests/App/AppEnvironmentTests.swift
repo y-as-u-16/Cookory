@@ -36,3 +36,12 @@ struct AppEnvironmentTests {
         }
     }
 }
+
+@MainActor
+struct SplashDurationTests {
+    /// 最低表示時間は短く保つ。起動から記録までを速くするのが目的のアプリで、
+    /// スプラッシュに時間を使うのは本末転倒。
+    @Test func 最低表示時間は1秒以内() {
+        #expect(RootView.minimumSplashDuration <= .seconds(1))
+    }
+}
