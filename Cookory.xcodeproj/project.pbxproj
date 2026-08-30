@@ -400,6 +400,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "料理の写真を撮って記録するためにカメラを使用します。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "撮影済みの料理写真を選んで記録するために写真ライブラリにアクセスします。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -434,6 +435,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "料理の写真を撮って記録するためにカメラを使用します。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "撮影済みの料理写真を選んで記録するために写真ライブラリにアクセスします。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
