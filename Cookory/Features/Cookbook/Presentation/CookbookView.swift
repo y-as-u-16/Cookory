@@ -33,7 +33,7 @@ struct CookbookView: View {
             }
         }
         .listStyle(.plain)
-        .navigationTitle("わが家の料理図鑑")
+        .navigationTitle(Text(L10n.cookbookTitle))
         .toolbar { sortMenu }
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
@@ -46,7 +46,7 @@ struct CookbookView: View {
                     Task { await viewModel.changeSort(to: sort) }
                 } label: {
                     if viewModel.sort == sort {
-                        Label(sort.displayName, systemImage: "checkmark")
+                        Label { Text(sort.displayName) } icon: { Image(systemName: "checkmark") }
                     } else {
                         Text(sort.displayName)
                     }
@@ -59,22 +59,22 @@ struct CookbookView: View {
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label("まだ料理がありません", systemImage: "book.closed")
+            Label(L10n.cookbookEmptyTitle, systemImage: "book.closed")
         } description: {
-            Text("記録した料理に名前を付けると、ここに集まります。")
+            Text(L10n.cookbookEmptyDescription)
         }
     }
 }
 
 extension CookbookSort {
     /// 表示名は Presentation の責務。Domain 側には持たせない。
-    var displayName: String {
+    var displayName: LocalizedStringResource {
         switch self {
-        case .recentlyCooked: "最近作った"
-        case .mostCooked: "よく作る"
-        case .notCookedRecently: "最近作っていない"
-        case .favorite: "お気に入り"
-        case .name: "名前順"
+        case .recentlyCooked: L10n.sortRecentlyCooked
+        case .mostCooked: L10n.sortMostCooked
+        case .notCookedRecently: L10n.sortNotCookedRecently
+        case .favorite: L10n.sortFavorite
+        case .name: L10n.sortName
         }
     }
 }

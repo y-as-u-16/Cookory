@@ -12,12 +12,38 @@ final class DishDetailViewModel {
 
     private(set) var state: State = .loading
 
+    /// 共有用に書き出した画像。共有シートへ渡す。
+    private(set) var shareImage: ShareImage?
+    private(set) var isPreparingShare = false
+
     private let dishID: UUID
     private let getDishHistory: GetDishHistoryUseCase
+    private let shareDish: ShareDishUseCase
 
-    init(dishID: UUID, getDishHistory: GetDishHistoryUseCase) {
+    init(
+        dishID: UUID,
+        getDishHistory: GetDishHistoryUseCase,
+        shareDish: ShareDishUseCase
+    ) {
         self.dishID = dishID
         self.getDishHistory = getDishHistory
+        self.shareDish = shareDish
+    }
+
+    func prepareShare() async {
+        guard !isPreparingShare else { return }
+        isPreparingShare = true
+        defer { isPreparingShare = false }
+
+        do {
+            shareImage = ShareImage(data: try await shareDish.execute(dishID: dishID))
+        } catch {
+            state = .failed(String(localized: L10n.errorGeneric))
+        }
+    }
+
+    func dismissShare() {
+        shareImage = nil
     }
 
     var history: DishHistory? {

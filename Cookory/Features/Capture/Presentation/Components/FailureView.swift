@@ -6,11 +6,11 @@ struct FailureView: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label("保存できませんでした", systemImage: "exclamationmark.triangle")
+            Label(L10n.captureFailedTitle, systemImage: "exclamationmark.triangle")
         } description: {
             Text(message)
         } actions: {
-            Button("やり直す", action: onRetry)
+            Button(String(localized: L10n.captureRetry), action: onRetry)
                 .buttonStyle(.borderedProminent)
         }
     }

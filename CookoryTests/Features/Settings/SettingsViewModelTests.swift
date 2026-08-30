@@ -94,7 +94,7 @@ struct AppTabTests {
 
     @Test func すべてのタブに表示名とアイコンがある() {
         for tab in AppTab.allCases {
-            #expect(!tab.title.isEmpty)
+            #expect(!String(localized: tab.title).isEmpty)
             #expect(!tab.systemImage.isEmpty)
         }
     }

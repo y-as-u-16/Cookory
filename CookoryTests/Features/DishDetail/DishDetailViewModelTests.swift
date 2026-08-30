@@ -9,10 +9,16 @@ struct DishDetailViewModelTests {
         meals: InMemoryMealRecordRepository = InMemoryMealRecordRepository(),
         dishID: UUID
     ) -> DishDetailViewModel {
-        DishDetailViewModel(
-            dishID: dishID,
-            getDishHistory: GetDishHistoryUseCase(dishRepository: dishes, mealRepository: meals)
-        )
+        {
+            let history = GetDishHistoryUseCase(dishRepository: dishes, mealRepository: meals)
+            return DishDetailViewModel(
+                dishID: dishID,
+                getDishHistory: history,
+                shareDish: ShareDishUseCase(
+                    getDishHistory: history, imageStorage: InMemoryImageStorage()
+                )
+            )
+        }()
     }
 
     private func name(_ raw: String) throws -> DishName {

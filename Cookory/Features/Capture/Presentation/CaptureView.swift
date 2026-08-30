@@ -12,6 +12,7 @@ struct CaptureView: View {
 
     @State private var viewModel: CaptureViewModel
     @State private var selection: [PhotosPickerItem] = []
+    @State private var isShowingCamera = false
 
     private let onSaved: (UUID) -> Void
 
@@ -26,10 +27,18 @@ struct CaptureView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .navigationTitle("記録する")
+        .navigationTitle(Text(L10n.captureTitle))
         .onChange(of: selection) { _, items in
             guard !items.isEmpty else { return }
             Task { await load(items) }
+        }
+        .fullScreenCover(isPresented: $isShowingCamera) {
+            CameraPicker { data in
+                isShowingCamera = false
+                guard let data else { return }
+                Task { await viewModel.save(images: [data]) }
+            }
+            .ignoresSafeArea()
         }
     }
 
@@ -39,7 +48,7 @@ struct CaptureView: View {
         case .idle:
             picker
         case .saving:
-            ProgressView("保存しています")
+            ProgressView { Text(L10n.captureSaving) }
         case .saved(let meal):
             SavedConfirmationView(
                 photoCount: meal.photoIDs.count,
@@ -53,20 +62,34 @@ struct CaptureView: View {
 
     private var picker: some View {
         VStack(spacing: 12) {
+            // シミュレータではカメラが無いため出さない。
+            if CameraPicker.isAvailable {
+                Button {
+                    isShowingCamera = true
+                } label: {
+                    Label(L10n.captureTakePhoto, systemImage: "camera.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+
             PhotosPicker(
                 selection: $selection,
                 maxSelectionCount: Self.photoLimit,
                 matching: .images,
                 photoLibrary: .shared()
             ) {
-                Label("写真を選ぶ", systemImage: "photo.on.rectangle.angled")
+                Label(L10n.captureChoosePhoto, systemImage: "photo.on.rectangle.angled")
                     .font(.title3.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
             }
-            .buttonStyle(.borderedProminent)
+            // カメラがあるときは撮影を主役にし、選択は控えめにする。
+            .buttonStyle(.bordered)
 
-            Text("最大 \(Self.photoLimit) 枚まで選べます")
+            Text(L10n.capturePhotoLimit(Self.photoLimit))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

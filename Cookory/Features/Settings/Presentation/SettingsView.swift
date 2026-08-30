@@ -2,23 +2,37 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var viewModel: SettingsViewModel
+    @Environment(AppSettings.self) private var appSettings
 
     init(viewModel: SettingsViewModel) {
         _viewModel = State(wrappedValue: viewModel)
     }
 
     var body: some View {
+        @Bindable var settings = appSettings
         List {
-            Section("データ") {
+            Section(String(localized: L10n.settingsDataSection)) {
                 exportRow
             }
-            Section("このアプリについて") {
-                LabeledContent("バージョン", value: viewModel.version)
-                NavigationLink("ライセンス") { LicenseView() }
-                Link("プライバシーポリシー", destination: PrivacyPolicy.url)
+            Section(String(localized: L10n.settingsAppearanceSection)) {
+                Picker(String(localized: L10n.settingsTheme), selection: $settings.theme) {
+                    ForEach(AppThemeMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+                Picker(String(localized: L10n.settingsLanguage), selection: $settings.language) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.label).tag(language)
+                    }
+                }
+            }
+            Section(String(localized: L10n.settingsAboutSection)) {
+                LabeledContent(String(localized: L10n.settingsVersion), value: viewModel.version)
+                NavigationLink(String(localized: L10n.settingsLicense)) { LicenseView() }
+                Link(String(localized: L10n.settingsPrivacy), destination: PrivacyPolicy.url)
             }
         }
-        .navigationTitle("設定")
+        .navigationTitle(Text(L10n.settingsTitle))
         .sheet(
             isPresented: Binding(
                 get: { viewModel.exportedFile != nil },
@@ -27,7 +41,7 @@ struct SettingsView: View {
         ) {
             if let url = viewModel.exportedFile {
                 ShareLink(item: url) {
-                    Label("書き出したデータを共有", systemImage: "square.and.arrow.up")
+                    Label(L10n.settingsShareExport, systemImage: "square.and.arrow.up")
                 }
                 .padding()
                 .presentationDetents([.medium])
@@ -40,18 +54,18 @@ struct SettingsView: View {
         switch viewModel.exportState {
         case .exporting(let progress):
             ProgressView(value: progress) {
-                Text("書き出しています")
+                Text(L10n.settingsExporting)
             }
         case .failed(let message):
             VStack(alignment: .leading, spacing: 8) {
                 Text(message).font(.footnote).foregroundStyle(.secondary)
-                Button("やり直す") { Task { await viewModel.export() } }
+                Button(String(localized: L10n.captureRetry)) { Task { await viewModel.export() } }
             }
         case .idle, .ready:
             Button {
                 Task { await viewModel.export() }
             } label: {
-                Label("データを書き出す", systemImage: "square.and.arrow.up")
+                Label(L10n.settingsExport, systemImage: "square.and.arrow.up")
             }
         }
     }
@@ -69,7 +83,7 @@ private struct LicenseView: View {
                 .font(.footnote.monospaced())
                 .padding()
         }
-        .navigationTitle("ライセンス")
+        .navigationTitle(Text(L10n.settingsLicense))
     }
 }
 

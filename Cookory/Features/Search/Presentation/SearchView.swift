@@ -22,7 +22,7 @@ struct SearchView: View {
                 noMatchState.listRowSeparator(.hidden)
             } else {
                 if !viewModel.results.dishes.isEmpty {
-                    Section("料理") {
+                    Section(String(localized: L10n.searchDishesSection)) {
                         ForEach(viewModel.results.dishes) { item in
                             Button { onSelectDish(item.dish.id) } label: {
                                 CookbookRowView(item: item)
@@ -32,7 +32,7 @@ struct SearchView: View {
                     }
                 }
                 if !viewModel.results.meals.isEmpty {
-                    Section("メモ") {
+                    Section(String(localized: L10n.searchNotesSection)) {
                         ForEach(viewModel.results.meals) { meal in
                             Button { onSelectMeal(meal.id) } label: {
                                 MealRowView(meal: meal)
@@ -44,13 +44,13 @@ struct SearchView: View {
             }
         }
         .listStyle(.plain)
-        .navigationTitle("検索")
+        .navigationTitle(Text(L10n.searchTitle))
         .searchable(
             text: Binding(
                 get: { viewModel.keyword },
                 set: { viewModel.keywordChanged(to: $0) }
             ),
-            prompt: "料理名・メモ"
+            prompt: Text(L10n.searchPrompt)
         )
         .overlay {
             if let message = viewModel.errorMessage {
