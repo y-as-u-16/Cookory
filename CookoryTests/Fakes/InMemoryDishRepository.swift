@@ -22,6 +22,11 @@ actor InMemoryDishRepository: DishRepository {
         return dishes[id]
     }
 
+    func fetchAll() async throws -> [Dish] {
+        try throwIfNeeded()
+        return dishes.values.sorted { $0.name.value < $1.name.value }
+    }
+
     func find(name: DishName) async throws -> Dish? {
         try throwIfNeeded()
         return dishes.values.first { $0.name == name }

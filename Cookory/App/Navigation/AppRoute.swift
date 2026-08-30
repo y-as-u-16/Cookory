@@ -6,6 +6,7 @@ import Foundation
 /// 遷移先の型ではなく ID だけを持つのは、Route を Hashable に保ち
 /// NavigationStack の path に載せられるようにするため（ARCHITECTURE.md #39）。
 enum AppRoute: Hashable, Sendable {
+    case capture
     case mealDetail(UUID)
     case dishDetail(UUID)
     case calendar(Date)

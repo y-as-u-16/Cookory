@@ -30,7 +30,12 @@ private struct NavigationStackView: View {
 
     var body: some View {
         NavigationStack(path: $router.path) {
-            CaptureView(viewModel: CaptureViewModel(createMealRecord: container.createMealRecord))
+            HomeView(
+                viewModel: HomeViewModel(getHomeContent: container.getHomeContent),
+                onRecord: { router.push(.capture) },
+                onSelectMeal: { router.push(.mealDetail($0)) },
+                onSelectDish: { router.push(.dishDetail($0)) }
+            )
                 .navigationDestination(for: AppRoute.self) { route in
                     destination(for: route)
                 }
@@ -47,6 +52,10 @@ private struct NavigationStackView: View {
             Text("料理 \(id.uuidString)")
         case .calendar(let date):
             Text("カレンダー \(date.formatted(date: .abbreviated, time: .omitted))")
+        case .capture:
+            CaptureView(
+                viewModel: CaptureViewModel(createMealRecord: container.createMealRecord)
+            )
         case .settings:
             Text("設定")
         }

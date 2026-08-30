@@ -17,6 +17,14 @@ struct SwiftDataDishRepository: DishRepository {
         }
     }
 
+    func fetchAll() async throws -> [Dish] {
+        try await withPersistenceError {
+            try await store.fetch(FetchDescriptor<DishModel>(
+                sortBy: [SortDescriptor(\.name)]
+            )).map { try $0.toDomain() }
+        }
+    }
+
     func find(name: DishName) async throws -> Dish? {
         try await withPersistenceError {
             let raw = name.value
