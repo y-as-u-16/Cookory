@@ -49,7 +49,11 @@ private struct NavigationStackView: View {
         case .mealDetail(let id):
             Text("食事記録 \(id.uuidString)")
         case .dishDetail(let id):
-            Text("料理 \(id.uuidString)")
+            DishDetailView(
+                viewModel: DishDetailViewModel(
+                    dishID: id, getDishHistory: container.getDishHistory
+                )
+            )
         case .calendar(let month):
             CalendarView(
                 viewModel: CalendarViewModel(query: container.calendarMealQuery, now: month),
