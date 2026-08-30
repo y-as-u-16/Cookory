@@ -84,14 +84,32 @@ struct SearchViewModelTests {
     }
 
     /// タイプするたびにクエリを投げると件数が増えたとき重くなる。
-    @Test func 連続入力ではデバウンスされる() async {
+    /// デバウンスを十分長く取り、待たずに検証する。実時間に依存させると
+    /// 遅いマシンで途中の入力が発火し、偽陽性で落ちる。
+    @Test func 連続入力では途中の入力で検索しない() async {
         let query = StubSearchQuery()
-        let viewModel = SearchViewModel(query: query, debounce: .milliseconds(80))
+        let viewModel = SearchViewModel(query: query, debounce: .seconds(30))
 
         viewModel.keywordChanged(to: "か")
         viewModel.keywordChanged(to: "から")
         viewModel.keywordChanged(to: "からあげ")
-        try? await Task.sleep(for: .milliseconds(300))
+
+        #expect(await query.callCount == 0)
+    }
+
+    /// 入力が落ち着けば最後の語で 1 度だけ検索する。
+    @Test func 入力が落ち着くと最後の語で検索する() async {
+        let query = StubSearchQuery()
+        let viewModel = SearchViewModel(query: query, debounce: .milliseconds(1))
+
+        viewModel.keywordChanged(to: "か")
+        viewModel.keywordChanged(to: "から")
+        viewModel.keywordChanged(to: "からあげ")
+
+        // 固定時間の待機にすると遅いマシンで足りなくなる。発火するまで待つ。
+        for _ in 0..<100 where await query.callCount == 0 {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
 
         #expect(await query.callCount == 1)
         #expect(await query.lastKeyword == "からあげ")
