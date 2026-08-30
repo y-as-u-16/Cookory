@@ -1,0 +1,23 @@
+# 掲載情報のアップロード設定。deliver（upload_to_app_store）が読む。
+# テキストは fastlane/metadata/、スクショは fastlane/screenshots/ から読む。
+#
+# スクショ（8枚で約10MB）は .gitignore で除外している。作り直すたびに
+# 履歴へ丸ごと積まれてリポジトリが膨らむため。手元にだけ置く。
+app_identifier("com.egi-engineer.Cookory")
+
+# 価格・配信国・年齢制限は App Store Connect 側の設定を正とする。
+# ここで上書きすると手動で直した内容が巻き戻るため触らない。
+submit_for_review(false)
+automatic_release(false)
+
+# 既存のスクショを消してから入れ直す。差分アップロードだと
+# 古い枚数が残って並び順が崩れる。
+#
+# sync_screenshots は使わない。beta 実装で、既存分があると
+# 「Retried uploading screenshots 0」でリトライせず失敗する。
+overwrite_screenshots(true)
+
+# 実行のたびに確認プロンプトが出ると止まるため無効にする。
+force(true)
+
+precheck_include_in_app_purchases(false)

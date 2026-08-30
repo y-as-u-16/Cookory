@@ -29,6 +29,8 @@ let ja = [
          sub: "作った料理だけが並ぶ"),
     Shot(file: "04-dish-history", caption: "同じ料理の上達まで残せる。",
          sub: "評価とメモが時系列で並ぶ"),
+    Shot(file: "05-meal-detail", caption: "あとから書き足せる。",
+         sub: "写真だけ先に。料理名は後で"),
 ]
 let en = [
     Shot(file: "01-home", caption: "Keep what you cooked",
@@ -39,6 +41,8 @@ let en = [
          sub: "Only the dishes you actually made"),
     Shot(file: "04-dish-history", caption: "Watch a dish get better",
          sub: "Ratings and notes over time"),
+    Shot(file: "05-meal-detail", caption: "Fill in the details later",
+         sub: "Photo first. Name it when you can"),
 ]
 let shots = lang == "ja" ? ja : en
 

@@ -13,8 +13,8 @@ final class ScreenshotTests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments = [DemoDataLaunchArgument]
         app.launch()
-        // デモデータの投入（画像 10 枚の生成を含む）を待つ。
-        Thread.sleep(forTimeInterval: 6)
+        // デモデータの投入（画像の生成を含む）とスプラッシュの終了を待つ。
+        Thread.sleep(forTimeInterval: 8)
     }
 
     func testCaptureAll() throws {

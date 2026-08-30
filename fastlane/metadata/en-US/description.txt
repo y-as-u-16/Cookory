@@ -9,9 +9,9 @@ Recorded dishes gather into a cookbook automatically. Cook karaage twelve times 
 ■ See a dish get better over time
 Open a dish and its cooking history appears in order.
 
-2026/08/29 ★★★★★ More potato starch made it crispier
-2026/08/12 ★★★★☆ A little too salty
-2026/07/15 ★★★☆☆ Tried double frying
+2026/08/29 Rated 5 - More potato starch made it crispier
+2026/08/12 Rated 4 - A little too salty
+2026/07/15 Rated 3 - Tried double frying
 
 Knowing how last time went helps the next time.
 

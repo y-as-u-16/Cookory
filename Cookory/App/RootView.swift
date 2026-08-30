@@ -4,10 +4,40 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
 
+    /// スプラッシュを見せ終えたか。読み込みが速く終わっても
+    /// 一瞬で消えると点滅に見えるため、最低表示時間を設ける。
+    @State private var hasFinishedSplash = false
+
+    /// 最低表示時間。これ以上待たせない。起動から記録までを速く保つため。
+    static let minimumSplashDuration: Duration = .milliseconds(900)
+
+    /// 読み込みが終わり、かつ最低表示時間を過ぎたら本編を出す。
+    /// 片方だけで判定すると、読み込みが遅いときに空白の画面が出る。
+    private var isShowingSplash: Bool {
+        if case .loading = appEnvironment.state { return true }
+        return !hasFinishedSplash
+    }
+
     var body: some View {
+        ZStack {
+            content
+            if isShowingSplash {
+                SplashView().transition(.opacity)
+            }
+        }
+        .animation(.smooth(duration: 0.4), value: isShowingSplash)
+        .task {
+            try? await Task.sleep(for: Self.minimumSplashDuration)
+            hasFinishedSplash = true
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch appEnvironment.state {
         case .loading:
-            ProgressView()
+            // スプラッシュが覆っているので何も出さない。
+            Color.clear
         case .ready(let container):
             MainTabView(container: container, routers: appEnvironment.routers)
         case .failed:
