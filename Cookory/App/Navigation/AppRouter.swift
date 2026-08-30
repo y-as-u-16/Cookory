@@ -9,6 +9,12 @@ import Observation
 final class AppRouter {
     var path: [AppRoute] = []
 
+    /// タブごとに独立した Router を持つ。共有すると、あるタブで開いた
+    /// 詳細画面が別のタブにも現れる。
+    static func perTab() -> [AppTab: AppRouter] {
+        Dictionary(uniqueKeysWithValues: AppTab.allCases.map { ($0, AppRouter()) })
+    }
+
     init(path: [AppRoute] = []) {
         self.path = path
     }

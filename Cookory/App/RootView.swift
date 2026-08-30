@@ -9,7 +9,7 @@ struct RootView: View {
         case .loading:
             ProgressView()
         case .ready(let container):
-            NavigationStackView(container: container, router: appEnvironment.router)
+            MainTabView(container: container, routers: appEnvironment.routers)
         case .failed:
             ContentUnavailableView(
                 "データを読み込めませんでした",
@@ -20,27 +20,77 @@ struct RootView: View {
     }
 }
 
-/// NavigationStack と Route の対応付け。
-///
-/// 遷移先の View がまだ無い Route はプレースホルダを返す。
-/// 各 Feature の Issue で順次差し替える。
-private struct NavigationStackView: View {
+/// 4 つのタブ。それぞれが独立した NavigationStack を持つ。
+private struct MainTabView: View {
+    let container: DependencyContainer
+    let routers: [AppTab: AppRouter]
+
+    @State private var selectedTab: AppTab = .home
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                TabStack(tab: tab, container: container, router: routers[tab] ?? AppRouter())
+                    .tabItem { Label(tab.title, systemImage: tab.systemImage) }
+                    .tag(tab)
+            }
+        }
+        .dependencies(container)
+    }
+}
+
+/// 1 タブ分の NavigationStack。
+private struct TabStack: View {
+    let tab: AppTab
     let container: DependencyContainer
     @Bindable var router: AppRouter
 
     var body: some View {
         NavigationStack(path: $router.path) {
+            root
+                .navigationDestination(for: AppRoute.self) { route in
+                    destination(for: route)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var root: some View {
+        switch tab {
+        case .home:
             HomeView(
                 viewModel: HomeViewModel(getHomeContent: container.getHomeContent),
                 onRecord: { router.push(.capture) },
                 onSelectMeal: { router.push(.mealDetail($0)) },
                 onSelectDish: { router.push(.dishDetail($0)) }
             )
-                .navigationDestination(for: AppRoute.self) { route in
-                    destination(for: route)
-                }
+            .toolbar { settingsButton }
+        case .calendar:
+            CalendarView(
+                viewModel: CalendarViewModel(query: container.calendarMealQuery),
+                onSelectMeal: { router.push(.mealDetail($0)) }
+            )
+        case .cookbook:
+            CookbookView(
+                viewModel: CookbookViewModel(query: container.cookbookQuery),
+                onSelectDish: { router.push(.dishDetail($0)) }
+            )
+        case .search:
+            SearchView(
+                viewModel: SearchViewModel(query: container.searchQuery),
+                onSelectDish: { router.push(.dishDetail($0)) },
+                onSelectMeal: { router.push(.mealDetail($0)) }
+            )
         }
-        .dependencies(container)
+    }
+
+    private var settingsButton: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { router.push(.settings) } label: {
+                Image(systemName: "gearshape")
+            }
+            .accessibilityLabel("設定")
+        }
     }
 
     @ViewBuilder
@@ -59,23 +109,45 @@ private struct NavigationStackView: View {
                 viewModel: CalendarViewModel(query: container.calendarMealQuery, now: month),
                 onSelectMeal: { router.push(.mealDetail($0)) }
             )
+        case .cookbook:
+            CookbookView(
+                viewModel: CookbookViewModel(query: container.cookbookQuery),
+                onSelectDish: { router.push(.dishDetail($0)) }
+            )
         case .search:
             SearchView(
                 viewModel: SearchViewModel(query: container.searchQuery),
                 onSelectDish: { router.push(.dishDetail($0)) },
                 onSelectMeal: { router.push(.mealDetail($0)) }
             )
-        case .cookbook:
-            CookbookView(
-                viewModel: CookbookViewModel(query: container.cookbookQuery),
-                onSelectDish: { router.push(.dishDetail($0)) }
-            )
         case .capture:
             CaptureView(
                 viewModel: CaptureViewModel(createMealRecord: container.createMealRecord)
             )
         case .settings:
-            Text("設定")
+            SettingsView(
+                viewModel: SettingsViewModel(exportData: container.exportData)
+            )
+        }
+    }
+}
+
+extension AppTab {
+    var title: String {
+        switch self {
+        case .home: "ホーム"
+        case .calendar: "カレンダー"
+        case .cookbook: "図鑑"
+        case .search: "検索"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .home: "house"
+        case .calendar: "calendar"
+        case .cookbook: "book"
+        case .search: "magnifyingglass"
         }
     }
 }

@@ -10,6 +10,10 @@ protocol MealRecordRepository: Sendable {
     /// 新しい順に取得する。`limit` は一覧表示で全件をメモリに載せないための上限。
     func fetchRecent(limit: Int) async throws -> [MealRecord]
 
+    /// 古い順にページ単位で取得する。Export のように全件を扱う処理で使う。
+    /// 一度に全件を返さないのは、数千件でも端末が固まらないようにするため。
+    func fetchPage(offset: Int, limit: Int) async throws -> [MealRecord]
+
     func save(_ meal: MealRecord) async throws
 
     /// 存在しない ID を渡しても失敗させない。削除の再実行を安全にするため。
