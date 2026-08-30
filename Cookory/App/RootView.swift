@@ -59,6 +59,12 @@ private struct NavigationStackView: View {
                 viewModel: CalendarViewModel(query: container.calendarMealQuery, now: month),
                 onSelectMeal: { router.push(.mealDetail($0)) }
             )
+        case .search:
+            SearchView(
+                viewModel: SearchViewModel(query: container.searchQuery),
+                onSelectDish: { router.push(.dishDetail($0)) },
+                onSelectMeal: { router.push(.mealDetail($0)) }
+            )
         case .cookbook:
             CookbookView(
                 viewModel: CookbookViewModel(query: container.cookbookQuery),

@@ -10,19 +10,22 @@ struct DependencyContainer: Sendable {
     let imageStorage: ImageStorage
     let calendarMealQuery: CalendarMealQuery
     let cookbookQuery: CookbookQuery
+    let searchQuery: SearchQuery
 
     init(
         mealRepository: MealRecordRepository,
         dishRepository: DishRepository,
         imageStorage: ImageStorage,
         calendarMealQuery: CalendarMealQuery,
-        cookbookQuery: CookbookQuery
+        cookbookQuery: CookbookQuery,
+        searchQuery: SearchQuery
     ) {
         self.mealRepository = mealRepository
         self.dishRepository = dishRepository
         self.imageStorage = imageStorage
         self.calendarMealQuery = calendarMealQuery
         self.cookbookQuery = cookbookQuery
+        self.searchQuery = searchQuery
     }
 }
 
@@ -35,7 +38,8 @@ extension DependencyContainer {
             dishRepository: SwiftDataDishRepository(store: store),
             imageStorage: try LocalImageStorage(),
             calendarMealQuery: SwiftDataCalendarMealQuery(store: store),
-            cookbookQuery: SwiftDataCookbookQuery(store: store)
+            cookbookQuery: SwiftDataCookbookQuery(store: store),
+            searchQuery: SwiftDataSearchQuery(store: store)
         )
     }
 
@@ -55,7 +59,8 @@ extension DependencyContainer {
                 thumbnailsDirectory: imageRoot.appendingPathComponent("thumbnails")
             ),
             calendarMealQuery: SwiftDataCalendarMealQuery(store: store),
-            cookbookQuery: SwiftDataCookbookQuery(store: store)
+            cookbookQuery: SwiftDataCookbookQuery(store: store),
+            searchQuery: SwiftDataSearchQuery(store: store)
         )
     }
 }

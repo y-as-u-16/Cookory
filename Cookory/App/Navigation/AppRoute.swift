@@ -8,6 +8,7 @@ import Foundation
 enum AppRoute: Hashable, Sendable {
     case capture
     case cookbook
+    case search
     case mealDetail(UUID)
     case dishDetail(UUID)
     case calendar(Date)
