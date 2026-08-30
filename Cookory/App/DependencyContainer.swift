@@ -78,6 +78,14 @@ extension DependencyContainer {
         )
     }
 
+    var getMealDetail: GetMealDetailUseCase {
+        GetMealDetailUseCase(mealRepository: mealRepository, dishRepository: dishRepository)
+    }
+
+    var editRecipe: EditRecipeUseCase {
+        EditRecipeUseCase(dishRepository: dishRepository)
+    }
+
     var getDishHistory: GetDishHistoryUseCase {
         GetDishHistoryUseCase(dishRepository: dishRepository, mealRepository: mealRepository)
     }

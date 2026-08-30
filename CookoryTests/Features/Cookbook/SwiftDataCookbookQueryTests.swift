@@ -178,3 +178,87 @@ struct SwiftDataCookbookQueryTests {
         #expect(items.first?.latestPhotoID == photoID)
     }
 }
+
+/// レシピの永続化。
+struct SwiftDataRecipeTests {
+    private func make() throws -> SwiftDataDishRepository {
+        SwiftDataDishRepository(store: try SwiftDataStore.makeInMemory())
+    }
+
+    @Test func レシピを保存して取り出せる() async throws {
+        let dishes = try make()
+        let dishID = UUID()
+        let link = try #require(RecipeLink(rawURL: "https://example.com", title: "参考"))
+        let recipe = Recipe(
+            dishID: dishID, ingredients: "鶏もも肉 300g", steps: "1. 下味", links: [link]
+        )
+
+        try await dishes.save(recipe)
+        let loaded = try #require(try await dishes.findRecipe(dishID: dishID))
+
+        #expect(loaded.ingredients == "鶏もも肉 300g")
+        #expect(loaded.steps == "1. 下味")
+        #expect(loaded.links.count == 1)
+        #expect(loaded.links.first?.title == "参考")
+    }
+
+    @Test func 未登録ならnilを返す() async throws {
+        let dishes = try make()
+
+        #expect(try await dishes.findRecipe(dishID: UUID()) == nil)
+    }
+
+    @Test func 同じ料理に二度保存しても重複しない() async throws {
+        let dishes = try make()
+        let dishID = UUID()
+        try await dishes.save(Recipe(dishID: dishID, ingredients: "初版"))
+
+        try await dishes.save(Recipe(dishID: dishID, ingredients: "改訂版"))
+
+        #expect(try await dishes.findRecipe(dishID: dishID)?.ingredients == "改訂版")
+    }
+
+    @Test func レシピを削除できる() async throws {
+        let dishes = try make()
+        let dishID = UUID()
+        try await dishes.save(Recipe(dishID: dishID, ingredients: "材料"))
+
+        try await dishes.deleteRecipe(dishID: dishID)
+
+        #expect(try await dishes.findRecipe(dishID: dishID) == nil)
+    }
+
+    /// 料理を消したらレシピも消える。残すと参照されないデータが溜まる。
+    @Test func 料理を削除するとレシピも消える() async throws {
+        let dishes = try make()
+        let dish = Dish(name: try #require(DishName("唐揚げ")))
+        try await dishes.save(dish)
+        try await dishes.save(Recipe(dishID: dish.id, ingredients: "材料"))
+
+        try await dishes.delete(id: dish.id)
+
+        #expect(try await dishes.findRecipe(dishID: dish.id) == nil)
+    }
+
+    @Test func リンクが往復で保たれる() async throws {
+        let dishes = try make()
+        let dishID = UUID()
+        let links = [
+            try #require(RecipeLink(rawURL: "https://a.example.com", title: "A")),
+            try #require(RecipeLink(rawURL: "https://b.example.com")),
+        ]
+
+        try await dishes.save(Recipe(dishID: dishID, links: links))
+        let loaded = try #require(try await dishes.findRecipe(dishID: dishID))
+
+        #expect(loaded.links.map(\.url) == links.map(\.url))
+        #expect(loaded.links.first?.title == "A")
+        #expect(loaded.links.last?.title == nil)
+    }
+
+    /// 保存された文字列が壊れていても、読める範囲を返す。
+    @Test func 壊れたリンクJSONは空として読む() {
+        #expect(RecipeModel.decodeLinks("not json").isEmpty)
+        #expect(RecipeModel.decodeLinks(nil).isEmpty)
+    }
+}

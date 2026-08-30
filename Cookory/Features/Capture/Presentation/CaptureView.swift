@@ -6,11 +6,18 @@ import SwiftUI
 /// 選択した時点で保存する。確認ボタンを挟まないのは
 /// 「Record Now, Organize Later」の実装（APP_DESIGN.md #4.3）。
 struct CaptureView: View {
-    @State private var viewModel: CaptureViewModel
-    @State private var selection: PhotosPickerItem?
+    /// 1 回の食卓で選べる枚数の上限。画像の保存が直列なため、
+    /// 多すぎると待ち時間が体感できるほど伸びる。
+    static let photoLimit = 10
 
-    init(viewModel: CaptureViewModel) {
+    @State private var viewModel: CaptureViewModel
+    @State private var selection: [PhotosPickerItem] = []
+
+    private let onSaved: (UUID) -> Void
+
+    init(viewModel: CaptureViewModel, onSaved: @escaping (UUID) -> Void) {
         _viewModel = State(wrappedValue: viewModel)
+        self.onSaved = onSaved
     }
 
     var body: some View {
@@ -20,9 +27,9 @@ struct CaptureView: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle("記録する")
-        .onChange(of: selection) { _, item in
-            guard let item else { return }
-            Task { await load(item) }
+        .onChange(of: selection) { _, items in
+            guard !items.isEmpty else { return }
+            Task { await load(items) }
         }
     }
 
@@ -33,34 +40,56 @@ struct CaptureView: View {
             picker
         case .saving:
             ProgressView("保存しています")
-        case .saved:
-            SavedConfirmationView(onDone: reset)
+        case .saved(let meal):
+            SavedConfirmationView(
+                photoCount: meal.photoIDs.count,
+                onAddDetails: { onSaved(meal.id) },
+                onDone: reset
+            )
         case .failed(let message):
             FailureView(message: message, onRetry: reset)
         }
     }
 
     private var picker: some View {
-        PhotosPicker(selection: $selection, matching: .images, photoLibrary: .shared()) {
-            Label("写真を選ぶ", systemImage: "camera.fill")
-                .font(.title3.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+        VStack(spacing: 12) {
+            PhotosPicker(
+                selection: $selection,
+                maxSelectionCount: Self.photoLimit,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                Label("写真を選ぶ", systemImage: "photo.on.rectangle.angled")
+                    .font(.title3.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Text("最大 \(Self.photoLimit) 枚まで選べます")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.borderedProminent)
     }
 
-    private func load(_ item: PhotosPickerItem) async {
-        guard let data = try? await item.loadTransferable(type: Data.self) else {
-            selection = nil
+    private func load(_ items: [PhotosPickerItem]) async {
+        var images: [Data] = []
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            images.append(data)
+        }
+
+        guard !images.isEmpty else {
+            selection = []
             return
         }
-        await viewModel.save(image: data)
-        selection = nil
+
+        await viewModel.save(images: images)
+        selection = []
     }
 
     private func reset() {
-        selection = nil
+        selection = []
         viewModel.reset()
     }
 }

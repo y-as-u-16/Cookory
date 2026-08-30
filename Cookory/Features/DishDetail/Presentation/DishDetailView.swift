@@ -3,9 +3,11 @@ import SwiftUI
 /// 同じ料理を作った履歴を時系列で見せる。本アプリの最重要の差別化画面。
 struct DishDetailView: View {
     @State private var viewModel: DishDetailViewModel
+    private let onOpenRecipe: () -> Void
 
-    init(viewModel: DishDetailViewModel) {
+    init(viewModel: DishDetailViewModel, onOpenRecipe: @escaping () -> Void) {
         _viewModel = State(wrappedValue: viewModel)
+        self.onOpenRecipe = onOpenRecipe
     }
 
     var body: some View {
@@ -28,6 +30,12 @@ struct DishDetailView: View {
         case .loaded(let history):
             VStack(alignment: .leading, spacing: 24) {
                 DishSummaryView(history: history)
+                Button(action: onOpenRecipe) {
+                    Label("作り方を見る・書く", systemImage: "list.bullet.rectangle")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.bordered)
                 if !history.entries.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("履歴").font(.headline)

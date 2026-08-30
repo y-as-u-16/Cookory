@@ -57,6 +57,12 @@ struct SwiftDataDishRepository: DishRepository {
             for log in logs {
                 await store.delete(log)
             }
+            // レシピも消す。残すと参照されないデータが溜まる。
+            if let recipe = try await store.fetchOne(FetchDescriptor<RecipeModel>(
+                predicate: #Predicate { $0.dishID == id }
+            )) {
+                await store.delete(recipe)
+            }
             if let model = try await store.fetchOne(FetchDescriptor<DishModel>(
                 predicate: #Predicate { $0.id == id }
             )) {
@@ -103,6 +109,39 @@ struct SwiftDataDishRepository: DishRepository {
         try await withPersistenceError {
             guard let model = try await store.fetchOne(FetchDescriptor<DishLogModel>(
                 predicate: #Predicate { $0.id == id }
+            )) else { return }
+            await store.delete(model)
+            try await store.save()
+        }
+    }
+
+    func findRecipe(dishID: UUID) async throws -> Recipe? {
+        try await withPersistenceError {
+            try await store.fetchOne(FetchDescriptor<RecipeModel>(
+                predicate: #Predicate { $0.dishID == dishID }
+            ))?.toDomain()
+        }
+    }
+
+    func save(_ recipe: Recipe) async throws {
+        try await withPersistenceError {
+            let dishID = recipe.dishID
+            let existing = try await store.fetchOne(FetchDescriptor<RecipeModel>(
+                predicate: #Predicate { $0.dishID == dishID }
+            ))
+            if let existing {
+                existing.update(from: recipe)
+            } else {
+                await store.insert(RecipeModel(from: recipe))
+            }
+            try await store.save()
+        }
+    }
+
+    func deleteRecipe(dishID: UUID) async throws {
+        try await withPersistenceError {
+            guard let model = try await store.fetchOne(FetchDescriptor<RecipeModel>(
+                predicate: #Predicate { $0.dishID == dishID }
             )) else { return }
             await store.delete(model)
             try await store.save()

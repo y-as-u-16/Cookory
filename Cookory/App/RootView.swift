@@ -97,12 +97,27 @@ private struct TabStack: View {
     private func destination(for route: AppRoute) -> some View {
         switch route {
         case .mealDetail(let id):
-            Text("食事記録 \(id.uuidString)")
+            MealDetailView(
+                viewModel: MealDetailViewModel(
+                    mealID: id,
+                    getMealDetail: container.getMealDetail,
+                    updateMealRecord: container.updateMealRecord,
+                    assignDishToMeal: container.assignDishToMeal,
+                    deleteMealRecord: container.deleteMealRecord
+                ),
+                onSelectDish: { router.push(.dishDetail($0)) },
+                onDeleted: { router.pop() }
+            )
+        case .recipe(let id):
+            RecipeEditorView(
+                viewModel: RecipeEditorViewModel(dishID: id, editRecipe: container.editRecipe)
+            )
         case .dishDetail(let id):
             DishDetailView(
                 viewModel: DishDetailViewModel(
                     dishID: id, getDishHistory: container.getDishHistory
-                )
+                ),
+                onOpenRecipe: { router.push(.recipe(id)) }
             )
         case .calendar(let month):
             CalendarView(
@@ -122,7 +137,8 @@ private struct TabStack: View {
             )
         case .capture:
             CaptureView(
-                viewModel: CaptureViewModel(createMealRecord: container.createMealRecord)
+                viewModel: CaptureViewModel(createMealRecord: container.createMealRecord),
+                onSaved: { router.push(.mealDetail($0)) }
             )
         case .settings:
             SettingsView(

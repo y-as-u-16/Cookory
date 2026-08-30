@@ -30,14 +30,14 @@ final class CaptureViewModel {
         return meal
     }
 
-    func save(image: Data, occurredAt: Date = Date()) async {
+    func save(images: [Data], occurredAt: Date = Date()) async {
         // 二重送信を防ぐ。保存ボタンの連打で記録が 2 件できると、
         // 利用者は重複に気づかないまま片方だけを編集することになる。
         guard !isSaving else { return }
 
         state = .saving
         do {
-            state = .saved(try await createMealRecord.execute(image: image, occurredAt: occurredAt))
+            state = .saved(try await createMealRecord.execute(images: images, occurredAt: occurredAt))
         } catch {
             state = .failed(Self.message(for: error))
         }

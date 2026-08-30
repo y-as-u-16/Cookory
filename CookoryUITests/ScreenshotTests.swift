@@ -20,6 +20,9 @@ final class ScreenshotTests: XCTestCase {
     func testCaptureAll() throws {
         capture(named: "01-home")
 
+        try captureMealDetail()
+        tapTab(index: 0)
+
         tapTab(index: 1)
         capture(named: "02-calendar")
 
@@ -27,6 +30,20 @@ final class ScreenshotTests: XCTestCase {
         capture(named: "03-cookbook")
 
         try captureDishDetail()
+    }
+
+    /// 記録の詳細。写真・料理名・メモが出る。
+    private func captureMealDetail() throws {
+        let row = app.descendants(matching: .any)
+            .matching(identifier: "recentMealRow").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "最近の料理が見つからない")
+        row.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        Thread.sleep(forTimeInterval: 2.5)
+
+        capture(named: "05-meal-detail")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        Thread.sleep(forTimeInterval: 1.5)
     }
 
     /// 同じ料理の履歴。本アプリの中核価値を示す画面。

@@ -29,7 +29,7 @@ struct DemoDataSeeder: Sendable {
             let occurredAt = calendar.date(byAdding: .day, value: -entry.daysAgo, to: now) ?? now
 
             let meal = try await container.createMealRecord.execute(
-                image: Self.makeImage(entry.style),
+                images: Self.makeImages(entry.style, count: entry.photoCount),
                 occurredAt: occurredAt,
                 now: occurredAt
             )
@@ -75,12 +75,16 @@ struct DemoDataSeeder: Sendable {
         let mealNote: String?
         let logNote: String?
         let style: DishStyle
+
+        /// 複数枚の記録も見せるため、一部の記録に 2 枚以上入れる。
+        var photoCount: Int = 1
     }
 
     /// 同じ料理を複数回入れて、Dish Detail に履歴が並ぶようにする。
     private static let entries: [Entry] = [
         Entry(dish: "鶏の唐揚げ", daysAgo: 1, mealType: .dinner, rating: 5,
-              mealNote: "家族に好評だった", logNote: "片栗粉を多めにしたらカリッとした", style: .fried),
+              mealNote: "家族に好評だった", logNote: "片栗粉を多めにしたらカリッとした", style: .fried,
+              photoCount: 3),
         Entry(dish: "肉じゃが", daysAgo: 3, mealType: .dinner, rating: 4,
               mealNote: nil, logNote: "煮込み時間を長めに", style: .stew),
         Entry(dish: "鮭のホイル焼き", daysAgo: 5, mealType: .dinner, rating: 4,
@@ -90,7 +94,8 @@ struct DemoDataSeeder: Sendable {
         Entry(dish: "鶏の唐揚げ", daysAgo: 18, mealType: .dinner, rating: 4,
               mealNote: nil, logNote: "少し味が濃かった", style: .fried),
         Entry(dish: "キーマカレー", daysAgo: 21, mealType: .lunch, rating: 5,
-              mealNote: "作り置きにも良い", logNote: "クミンを追加したのが正解", style: .curry),
+              mealNote: "作り置きにも良い", logNote: "クミンを追加したのが正解", style: .curry,
+              photoCount: 2),
         Entry(dish: "豚汁", daysAgo: 24, mealType: .dinner, rating: 4,
               mealNote: nil, logNote: "根菜を大きめに切る", style: .soup),
         Entry(dish: "鶏の唐揚げ", daysAgo: 46, mealType: .dinner, rating: 3,
@@ -105,7 +110,12 @@ struct DemoDataSeeder: Sendable {
     ///
     /// 実際の料理写真を同梱すると権利の確認が都度必要になるため、
     /// 皿と料理を図形で描く。掲載画像でも料理の違いが分かるようにする。
-    private static func makeImage(_ style: DishStyle) -> Data {
+    /// 同じ料理でも少しずつ違う絵にする。皿の向きを変えて複数枚を作る。
+    private static func makeImages(_ style: DishStyle, count: Int) -> [Data] {
+        (0..<max(1, count)).map { makeImage(style, variant: $0) }
+    }
+
+    private static func makeImage(_ style: DishStyle, variant: Int = 0) -> Data {
         let size = 900
         guard let context = CGContext(
             data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0,
@@ -116,7 +126,14 @@ struct DemoDataSeeder: Sendable {
         let side = CGFloat(size)
         drawBackground(in: context, side: side, style: style)
         drawPlate(in: context, side: side, style: style)
+
+        // 変化形は皿ごと回して別カットに見せる。
+        context.saveGState()
+        context.translateBy(x: side / 2, y: side / 2)
+        context.rotate(by: CGFloat(variant) * 0.5)
+        context.translateBy(x: -side / 2, y: -side / 2)
         drawFood(in: context, side: side, style: style)
+        context.restoreGState()
 
         guard let image = context.makeImage() else { return Data() }
         let output = NSMutableData()

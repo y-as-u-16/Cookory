@@ -11,6 +11,7 @@ enum AppRoute: Hashable, Sendable {
     case search
     case mealDetail(UUID)
     case dishDetail(UUID)
+    case recipe(UUID)
     case calendar(Date)
     case settings
 }

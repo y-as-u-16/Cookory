@@ -24,7 +24,7 @@ struct CaptureViewModelTests {
     @Test func 保存に成功するとsavedになる() async {
         let viewModel = makeViewModel()
 
-        await viewModel.save(image: image)
+        await viewModel.save(images: [image])
 
         #expect(viewModel.savedRecord != nil)
     }
@@ -34,7 +34,7 @@ struct CaptureViewModelTests {
         let viewModel = makeViewModel(repository: repository)
         let occurredAt = Date(timeIntervalSince1970: 1_700_000_000)
 
-        await viewModel.save(image: image, occurredAt: occurredAt)
+        await viewModel.save(images: [image], occurredAt: occurredAt)
 
         #expect(viewModel.savedRecord?.occurredAt == occurredAt)
         #expect(await repository.count == 1)
@@ -45,7 +45,7 @@ struct CaptureViewModelTests {
         await storage.setError(.imageStorageFailed)
         let viewModel = makeViewModel(storage: storage)
 
-        await viewModel.save(image: image)
+        await viewModel.save(images: [image])
 
         #expect(viewModel.state == .failed("写真を保存できませんでした。空き容量をご確認ください。"))
     }
@@ -55,7 +55,7 @@ struct CaptureViewModelTests {
         await repository.setError(.persistenceFailed)
         let viewModel = makeViewModel(repository: repository)
 
-        await viewModel.save(image: image)
+        await viewModel.save(images: [image])
 
         #expect(viewModel.state == .failed("記録を保存できませんでした。もう一度お試しください。"))
     }
@@ -66,7 +66,7 @@ struct CaptureViewModelTests {
         await storage.setError(.imageStorageFailed)
         let viewModel = makeViewModel(storage: storage)
 
-        await viewModel.save(image: image)
+        await viewModel.save(images: [image])
 
         guard case .failed(let message) = viewModel.state else {
             Issue.record("failed になっていません")
@@ -78,7 +78,7 @@ struct CaptureViewModelTests {
 
     @Test func resetでidleに戻る() async {
         let viewModel = makeViewModel()
-        await viewModel.save(image: image)
+        await viewModel.save(images: [image])
 
         viewModel.reset()
 
@@ -89,11 +89,11 @@ struct CaptureViewModelTests {
         let storage = InMemoryImageStorage()
         await storage.setError(.imageStorageFailed)
         let viewModel = makeViewModel(storage: storage)
-        await viewModel.save(image: image)
+        await viewModel.save(images: [image])
 
         viewModel.reset()
         await storage.setError(nil)
-        await viewModel.save(image: image)
+        await viewModel.save(images: [image])
 
         #expect(viewModel.savedRecord != nil)
     }
@@ -112,7 +112,7 @@ struct CaptureDoubleSubmitTests {
             )
         )
 
-        let task = Task { await viewModel.save(image: Data("a".utf8)) }
+        let task = Task { await viewModel.save(images: [Data("a".utf8)]) }
         await Task.yield()
 
         #expect(viewModel.isSaving)
@@ -134,12 +134,12 @@ struct CaptureDoubleSubmitTests {
             )
         )
 
-        let first = Task { await viewModel.save(image: Data("a".utf8)) }
+        let first = Task { await viewModel.save(images: [Data("a".utf8)]) }
         await Task.yield()
 
         // 保存中に届いた 2 回目。ガードが無いと gate で止まったまま返らないため、
         // 待ち続けずにタスクとして投げて完了を待たない。
-        let second = Task { await viewModel.save(image: Data("b".utf8)) }
+        let second = Task { await viewModel.save(images: [Data("b".utf8)]) }
         await Task.yield()
 
         await gate.open()

@@ -5,6 +5,7 @@ import Foundation
 actor InMemoryDishRepository: DishRepository {
     private var dishes: [UUID: Dish] = [:]
     private var logs: [UUID: DishLog] = [:]
+    private var recipes: [UUID: Recipe] = [:]
 
     var errorToThrow: DomainError?
 
@@ -41,6 +42,7 @@ actor InMemoryDishRepository: DishRepository {
         try throwIfNeeded()
         dishes.removeValue(forKey: id)
         logs = logs.filter { $0.value.dishID != id }
+        recipes.removeValue(forKey: id)
     }
 
     func fetchLogs(dishID: UUID) async throws -> [DishLog] {
@@ -65,6 +67,21 @@ actor InMemoryDishRepository: DishRepository {
     func deleteLog(id: UUID) async throws {
         try throwIfNeeded()
         logs.removeValue(forKey: id)
+    }
+
+    func findRecipe(dishID: UUID) async throws -> Recipe? {
+        try throwIfNeeded()
+        return recipes[dishID]
+    }
+
+    func save(_ recipe: Recipe) async throws {
+        try throwIfNeeded()
+        recipes[recipe.dishID] = recipe
+    }
+
+    func deleteRecipe(dishID: UUID) async throws {
+        try throwIfNeeded()
+        recipes.removeValue(forKey: dishID)
     }
 
     // MARK: - Test helpers
