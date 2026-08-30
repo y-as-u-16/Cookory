@@ -4,10 +4,11 @@ import SwiftUI
 struct PhotoThumbnailView: View {
     let photoID: UUID?
 
+    /// 既定のサイズ。カレンダーのマスなど小さく出したい場所で上書きする。
+    var size: CGFloat = 56
+
     @Environment(\.dependencies) private var dependencies
     @State private var image: UIImage?
-
-    private static let size: CGFloat = 56
 
     var body: some View {
         Group {
@@ -19,7 +20,7 @@ struct PhotoThumbnailView: View {
                     .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
             }
         }
-        .frame(width: Self.size, height: Self.size)
+        .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .task(id: photoID) { await load() }
     }
