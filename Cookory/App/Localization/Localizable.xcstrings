@@ -1456,6 +1456,38 @@
           }
         }
       }
+    },
+    "home.summary.week %lld": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今週 %lld 日 作りました"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cooked on %lld days this week"
+          }
+        }
+      }
+    },
+    "home.summary.total %lld %lld": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これまでに %lld 品・%lld 種類"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld records · %lld dishes so far"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

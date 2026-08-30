@@ -97,6 +97,21 @@ actor LocalImageStorage: ImageStorage {
         return data
     }
 
+    /// 表示サイズは都度作る。原本は 2048px までなので十分な解像度が得られる。
+    /// ファイルとして持たないのは、サイズごとに増やすと Caches が膨らむため。
+    func loadDisplayImage(id: UUID, maxDimension: Int) async throws -> Data {
+        let originalData = try await load(id: id)
+        guard let source = CGImageSourceCreateWithData(originalData as CFData, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceCreateThumbnailWithTransform: true,
+                  kCGImageSourceThumbnailMaxPixelSize: maxDimension,
+              ] as CFDictionary) else {
+            throw DomainError.imageStorageFailed
+        }
+        return try encodeJPEG(image)
+    }
+
     func delete(id: UUID) async throws {
         for url in [originalDirectory(for: id), thumbnailDirectory(for: id)] {
             guard fileManager.fileExists(atPath: url.path) else { continue }
@@ -134,6 +149,23 @@ actor LocalImageStorage: ImageStorage {
             throw DomainError.imageStorageFailed
         }
         try write(thumbnail, to: thumbnailURL(for: id))
+    }
+
+    /// メモリ上で JPEG にする。ファイルに残さない用途で使う。
+    private func encodeJPEG(_ image: CGImage) throws -> Data {
+        let output = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            output, UTType.jpeg.identifier as CFString, 1, nil
+        ) else {
+            throw DomainError.imageStorageFailed
+        }
+        CGImageDestinationAddImage(destination, image, [
+            kCGImageDestinationLossyCompressionQuality: Self.compressionQuality,
+        ] as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else {
+            throw DomainError.imageStorageFailed
+        }
+        return output as Data
     }
 
     private func write(_ image: CGImage, to url: URL) throws {

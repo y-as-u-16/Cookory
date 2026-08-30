@@ -8,7 +8,11 @@ struct GetHomeContentUseCase: Sendable {
     /// 「久しぶり」と見なす日数。
     static let forgottenThresholdDays = 30
     static let recentMealLimit = 10
-    static let forgottenDishLimit = 3
+    static let forgottenDishLimit = 6
+
+    /// 通算件数を数える上限。これを超えたら「たくさん」として扱えば足りる。
+    static let totalCountCap = 500
+    static let countPageSize = 100
 
     private let mealRepository: MealRecordRepository
     private let dishRepository: DishRepository
@@ -19,10 +23,38 @@ struct GetHomeContentUseCase: Sendable {
     }
 
     func execute(now: Date = Date(), calendar: Calendar = .current) async throws -> HomeContent {
-        HomeContent(
-            recentMeals: try await recentMeals(),
-            forgottenDishes: try await forgottenDishes(now: now, calendar: calendar)
+        let recent = try await recentMeals()
+        let dishes = try await dishRepository.fetchAll()
+
+        return HomeContent(
+            recentMeals: recent,
+            forgottenDishes: try await forgottenDishes(
+                dishes, now: now, calendar: calendar
+            ),
+            summary: CookingSummary.make(
+                recentMeals: recent.map(\.meal),
+                totalRecords: try await totalRecordCount(),
+                distinctDishes: dishes.count,
+                now: now,
+                calendar: calendar
+            )
         )
+    }
+
+    /// 通算の記録件数。上限まで数えて、それ以上は「上限以上」として扱う。
+    /// 全件を数えるために全件を読むのは、記録が増えるほど重くなる。
+    private func totalRecordCount() async throws -> Int {
+        var total = 0
+        var offset = 0
+        while total < Self.totalCountCap {
+            let page = try await mealRepository.fetchPage(
+                offset: offset, limit: Self.countPageSize
+            )
+            guard !page.isEmpty else { break }
+            total += page.count
+            offset += page.count
+        }
+        return total
     }
 
     /// 記録に紐づく料理名を解決する。
@@ -42,20 +74,30 @@ struct GetHomeContentUseCase: Sendable {
         return results
     }
 
-    private func forgottenDishes(now: Date, calendar: Calendar) async throws -> [ForgottenDish] {
+    private func forgottenDishes(
+        _ dishes: [Dish], now: Date, calendar: Calendar
+    ) async throws -> [ForgottenDish] {
         var candidates: [ForgottenDish] = []
 
-        for dish in try await dishRepository.fetchAll() {
+        for dish in dishes {
             // 一度も作っていない料理は「久しぶり」ではない。
-            guard let lastCookedAt = try await dishRepository
-                .fetchLogs(dishID: dish.id).first?.cookedAt else { continue }
+            guard let latest = try await dishRepository.fetchLogs(dishID: dish.id).first
+            else { continue }
 
-            let days = calendar.dateComponents([.day], from: lastCookedAt, to: now).day ?? 0
+            let days = calendar.dateComponents(
+                [.day], from: latest.cookedAt, to: now
+            ).day ?? 0
             guard days >= Self.forgottenThresholdDays else { continue }
 
-            candidates.append(
-                ForgottenDish(dish: dish, lastCookedAt: lastCookedAt, daysSinceLastCooked: days)
-            )
+            let photoID = try await mealRepository
+                .find(id: latest.mealRecordID)?.photoIDs.first
+
+            candidates.append(ForgottenDish(
+                dish: dish,
+                lastCookedAt: latest.cookedAt,
+                daysSinceLastCooked: days,
+                latestPhotoID: photoID
+            ))
         }
 
         return candidates

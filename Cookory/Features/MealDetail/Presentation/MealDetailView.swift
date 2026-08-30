@@ -61,7 +61,9 @@ struct MealDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(detail.meal.photoIDs, id: \.self) { photoID in
-                        PhotoThumbnailView(photoID: photoID, size: 160)
+                        PhotoImageView(photoID: photoID, size: .hero)
+                            .frame(width: 160, height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                 }
                 .padding(.vertical, 4)

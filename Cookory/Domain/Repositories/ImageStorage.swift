@@ -14,6 +14,12 @@ protocol ImageStorage: Sendable {
     /// サムネイルを読み出す。破棄されていれば原本から作り直す。
     func loadThumbnail(id: UUID) async throws -> Data
 
+    /// 指定した長辺に収まる画像を返す。
+    ///
+    /// 大きく出す場所ではサムネイル（小さい）では粗く、原本（大きい）では
+    /// デコードが重い。必要な大きさだけを渡すための窓口。
+    func loadDisplayImage(id: UUID, maxDimension: Int) async throws -> Data
+
     /// 原本とサムネイルの両方を削除する。存在しなくても失敗させない。
     func delete(id: UUID) async throws
 }

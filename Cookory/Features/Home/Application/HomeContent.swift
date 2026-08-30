@@ -7,10 +7,13 @@ import Foundation
 struct HomeContent: Equatable, Sendable {
     var recentMeals: [RecentMeal]
     var forgottenDishes: [ForgottenDish]
+    var summary: CookingSummary
 
     var isEmpty: Bool { recentMeals.isEmpty && forgottenDishes.isEmpty }
 
-    static let empty = HomeContent(recentMeals: [], forgottenDishes: [])
+    static let empty = HomeContent(
+        recentMeals: [], forgottenDishes: [], summary: .empty
+    )
 }
 
 /// 最近の記録 1 件。
@@ -34,6 +37,9 @@ struct ForgottenDish: Equatable, Sendable, Identifiable {
     let dish: Dish
     let lastCookedAt: Date
     let daysSinceLastCooked: Int
+
+    /// 最後に作ったときの写真。文字だけでは思い出す手がかりにならない。
+    let latestPhotoID: UUID?
 
     var id: UUID { dish.id }
 }

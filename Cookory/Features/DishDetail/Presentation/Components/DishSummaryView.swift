@@ -5,7 +5,9 @@ struct DishSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PhotoThumbnailView(photoID: history.latestPhotoID, size: 200)
+            PhotoImageView(photoID: history.latestPhotoID, size: .hero)
+                .frame(height: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .frame(maxWidth: .infinity)
             Text(L10n.dishCookCount(history.cookCount))
                 .font(.title3.weight(.semibold))
