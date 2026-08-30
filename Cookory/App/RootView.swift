@@ -50,8 +50,11 @@ private struct NavigationStackView: View {
             Text("食事記録 \(id.uuidString)")
         case .dishDetail(let id):
             Text("料理 \(id.uuidString)")
-        case .calendar(let date):
-            Text("カレンダー \(date.formatted(date: .abbreviated, time: .omitted))")
+        case .calendar(let month):
+            CalendarView(
+                viewModel: CalendarViewModel(query: container.calendarMealQuery, now: month),
+                onSelectMeal: { router.push(.mealDetail($0)) }
+            )
         case .capture:
             CaptureView(
                 viewModel: CaptureViewModel(createMealRecord: container.createMealRecord)
