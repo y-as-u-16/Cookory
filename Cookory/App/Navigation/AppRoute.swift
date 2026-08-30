@@ -7,6 +7,7 @@ import Foundation
 /// NavigationStack の path に載せられるようにするため（ARCHITECTURE.md #39）。
 enum AppRoute: Hashable, Sendable {
     case capture
+    case cookbook
     case mealDetail(UUID)
     case dishDetail(UUID)
     case calendar(Date)
