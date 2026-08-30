@@ -10,7 +10,7 @@ final class CookbookViewModel {
     private(set) var items: [CookbookItem] = []
     private(set) var isLoading = false
     private(set) var hasMore = true
-    private(set) var errorMessage: String?
+    private(set) var errorMessage: LocalizedStringResource?
 
     var sort: CookbookSort = .recentlyCooked
 
@@ -32,7 +32,7 @@ final class CookbookViewModel {
             errorMessage = nil
         } catch {
             items = []
-            errorMessage = "読み込めませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorLoad
         }
     }
 
@@ -48,7 +48,7 @@ final class CookbookViewModel {
             items.append(contentsOf: next)
             hasMore = next.count == Self.pageSize
         } catch {
-            errorMessage = "読み込めませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorLoad
         }
     }
 

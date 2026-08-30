@@ -67,7 +67,7 @@ struct SettingsViewModelTests {
             Issue.record("failed になっていません")
             return
         }
-        #expect(!message.contains("DomainError"))
+        #expect(!String(localized: message).contains("DomainError"))
     }
 }
 

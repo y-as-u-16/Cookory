@@ -8,7 +8,7 @@ final class SettingsViewModel {
         case idle
         case exporting(Double)
         case ready(URL)
-        case failed(String)
+        case failed(LocalizedStringResource)
     }
 
     private(set) var exportState: ExportState = .idle
@@ -52,7 +52,7 @@ final class SettingsViewModel {
             }
             exportState = .ready(url)
         } catch {
-            exportState = .failed("書き出しに失敗しました。空き容量をご確認ください。")
+            exportState = .failed(L10n.errorExport)
         }
     }
 

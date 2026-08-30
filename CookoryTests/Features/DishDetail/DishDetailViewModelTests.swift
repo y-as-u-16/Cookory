@@ -50,7 +50,7 @@ struct DishDetailViewModelTests {
             Issue.record("failed になっていません")
             return
         }
-        #expect(!message.contains("DomainError"))
+        #expect(!String(localized: message).contains("DomainError"))
     }
 
     @Test func お気に入りを切り替えられる() async throws {

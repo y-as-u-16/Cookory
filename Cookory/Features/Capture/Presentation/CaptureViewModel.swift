@@ -11,7 +11,7 @@ final class CaptureViewModel {
         case idle
         case saving
         case saved(MealRecord)
-        case failed(String)
+        case failed(LocalizedStringResource)
     }
 
     private(set) var state: State = .idle
@@ -50,19 +50,19 @@ final class CaptureViewModel {
 
     /// DomainError を利用者向けの文言に翻訳する。
     /// エラーの内部表現をそのまま見せない（ARCHITECTURE.md #61）。
-    private static func message(for error: Error) -> String {
+    private static func message(for error: Error) -> LocalizedStringResource {
         guard let domainError = error as? DomainError else {
-            return "保存できませんでした。もう一度お試しください。"
+            return L10n.errorSave
         }
         switch domainError {
         case .imageStorageFailed:
-            return "写真を保存できませんでした。空き容量をご確認ください。"
+            return L10n.errorImageStorage
         case .persistenceFailed:
-            return "記録を保存できませんでした。もう一度お試しください。"
+            return L10n.errorSave
         case .invalidInput(let reason):
-            return reason
+            return LocalizedStringResource(stringLiteral: reason)
         case .notFound:
-            return "対象が見つかりませんでした。"
+            return L10n.errorNotFound
         }
     }
 }

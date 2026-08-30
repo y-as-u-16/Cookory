@@ -11,7 +11,7 @@ final class SearchViewModel {
 
     private(set) var results: SearchResults = .empty
     private(set) var isSearching = false
-    private(set) var errorMessage: String?
+    private(set) var errorMessage: LocalizedStringResource?
 
     var keyword: String = ""
 
@@ -64,7 +64,7 @@ final class SearchViewModel {
             errorMessage = nil
         } catch {
             results = .empty
-            errorMessage = "検索できませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorGeneric
         }
     }
 

@@ -5,7 +5,7 @@ import Observation
 @Observable
 final class RecipeEditorViewModel {
     private(set) var recipe: Recipe?
-    private(set) var errorMessage: String?
+    private(set) var errorMessage: LocalizedStringResource?
     private(set) var isLoaded = false
 
     var ingredientsDraft: String = ""
@@ -39,7 +39,7 @@ final class RecipeEditorViewModel {
             }
             errorMessage = nil
         } catch {
-            errorMessage = "読み込めませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorLoad
         }
     }
 
@@ -50,7 +50,7 @@ final class RecipeEditorViewModel {
             )
             errorMessage = nil
         } catch {
-            errorMessage = "保存できませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorSave
         }
     }
 
@@ -62,10 +62,11 @@ final class RecipeEditorViewModel {
             linkURLDraft = ""
             linkTitleDraft = ""
             errorMessage = nil
-        } catch DomainError.invalidInput(let reason) {
-            errorMessage = reason
+        } catch DomainError.invalidInput {
+            // Domain の文言は利用者向けではない。表示は Presentation で決める。
+            errorMessage = L10n.errorInvalidLink
         } catch {
-            errorMessage = "追加できませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorGeneric
         }
     }
 
@@ -74,7 +75,7 @@ final class RecipeEditorViewModel {
             recipe = try await editRecipe.removeLink(dishID: dishID, linkID: id)
             errorMessage = nil
         } catch {
-            errorMessage = "削除できませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorGeneric
         }
     }
 }

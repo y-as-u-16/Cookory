@@ -55,6 +55,60 @@ struct HomeViewModelTests {
             Issue.record("failed になっていません")
             return
         }
-        #expect(!message.contains("DomainError"))
+        #expect(!String(localized: message).contains("DomainError"))
+    }
+}
+
+/// エラー文言が英語設定で英語になること。
+///
+/// 以前は ViewModel に日本語を直書きしていたため、英語設定でも
+/// 日本語のエラーが出ていた。
+@MainActor
+struct ErrorMessageLocalizationTests {
+    @Test func エラー文言が言語設定に追従する() async {
+        let meals = InMemoryMealRecordRepository()
+        await meals.setError(.persistenceFailed)
+        let viewModel = HomeViewModel(
+            getHomeContent: GetHomeContentUseCase(
+                mealRepository: meals, dishRepository: InMemoryDishRepository()
+            )
+        )
+
+        await viewModel.load()
+
+        guard case .failed(let message) = viewModel.state else {
+            Issue.record("failed になっていません")
+            return
+        }
+
+        var japanese = message
+        japanese.locale = Locale(identifier: "ja_JP")
+        var english = message
+        english.locale = Locale(identifier: "en_US")
+
+        #expect(String(localized: japanese) != String(localized: english))
+        #expect(!String(localized: english).contains("ませ"))
+    }
+
+    /// 内部表現を利用者に見せない。
+    @Test func どの言語でも内部表現が出ない() async {
+        let meals = InMemoryMealRecordRepository()
+        await meals.setError(.persistenceFailed)
+        let viewModel = HomeViewModel(
+            getHomeContent: GetHomeContentUseCase(
+                mealRepository: meals, dishRepository: InMemoryDishRepository()
+            )
+        )
+        await viewModel.load()
+
+        guard case .failed(let message) = viewModel.state else { return }
+
+        for identifier in ["ja_JP", "en_US"] {
+            var localized = message
+            localized.locale = Locale(identifier: identifier)
+            let text = String(localized: localized)
+            #expect(!text.contains("DomainError"))
+            #expect(!text.contains("persistenceFailed"))
+        }
     }
 }

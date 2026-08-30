@@ -1488,6 +1488,22 @@
           }
         }
       }
+    },
+    "error.export": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出しに失敗しました。空き容量をご確認ください。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export failed. Check your available storage."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

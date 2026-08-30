@@ -7,11 +7,11 @@ final class MealDetailViewModel {
     enum State: Equatable {
         case loading
         case loaded(MealDetail)
-        case failed(String)
+        case failed(LocalizedStringResource)
     }
 
     private(set) var state: State = .loading
-    private(set) var errorMessage: String?
+    private(set) var errorMessage: LocalizedStringResource?
 
     /// 入力中の値。保存するまで記録には反映しない。
     var noteDraft: String = ""
@@ -60,7 +60,7 @@ final class MealDetailViewModel {
             if mealTypeDraft == nil { mealTypeDraft = detail.meal.mealType }
             errorMessage = nil
         } catch {
-            state = .failed("読み込めませんでした。もう一度お試しください。")
+            state = .failed(L10n.errorLoad)
         }
     }
 
@@ -72,14 +72,14 @@ final class MealDetailViewModel {
             )
             await load()
         } catch {
-            errorMessage = "保存できませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorSave
         }
     }
 
     /// 料理名を追加する。同じ名前なら既存の料理に紐づく。
     func addDish() async {
         guard let name = DishName(dishNameDraft) else {
-            errorMessage = "料理名を入力してください。"
+            errorMessage = L10n.errorDishNameRequired
             return
         }
 
@@ -89,7 +89,7 @@ final class MealDetailViewModel {
             errorMessage = nil
             await load()
         } catch {
-            errorMessage = "追加できませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorGeneric
         }
     }
 
@@ -99,7 +99,7 @@ final class MealDetailViewModel {
             try await deleteMealRecord.execute(id: mealID)
             return true
         } catch {
-            errorMessage = "削除できませんでした。もう一度お試しください。"
+            errorMessage = L10n.errorGeneric
             return false
         }
     }
