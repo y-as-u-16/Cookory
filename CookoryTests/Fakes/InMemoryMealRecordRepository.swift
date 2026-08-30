@@ -30,6 +30,16 @@ actor InMemoryMealRecordRepository: MealRecordRepository {
             .map { $0 }
     }
 
+    func fetchPage(offset: Int, limit: Int) async throws -> [MealRecord] {
+        try throwIfNeeded()
+        guard limit > 0 else { return [] }
+        return storage.values
+            .sorted { $0.occurredAt < $1.occurredAt }
+            .dropFirst(offset)
+            .prefix(limit)
+            .map { $0 }
+    }
+
     func save(_ meal: MealRecord) async throws {
         try throwIfNeeded()
         storage[meal.id] = meal

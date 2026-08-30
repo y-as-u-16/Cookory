@@ -35,7 +35,7 @@ final class AppEnvironment {
     }
 
     private(set) var state: State = .loading
-    let router = AppRouter()
+    let routers = AppRouter.perTab()
 
     func bootstrap(using build: () throws -> DependencyContainer = { try DependencyContainer.live() }) {
         do {

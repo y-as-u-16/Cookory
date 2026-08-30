@@ -70,6 +70,14 @@ extension DependencyContainer {
         CreateMealRecordUseCase(mealRepository: mealRepository, imageStorage: imageStorage)
     }
 
+    var exportData: ExportDataUseCase {
+        ExportDataUseCase(
+            mealRepository: mealRepository,
+            dishRepository: dishRepository,
+            imageStorage: imageStorage
+        )
+    }
+
     var getDishHistory: GetDishHistoryUseCase {
         GetDishHistoryUseCase(dishRepository: dishRepository, mealRepository: mealRepository)
     }

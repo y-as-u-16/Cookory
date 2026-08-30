@@ -30,6 +30,18 @@ struct SwiftDataMealRecordRepository: MealRecordRepository {
         }
     }
 
+    func fetchPage(offset: Int, limit: Int) async throws -> [MealRecord] {
+        guard limit > 0 else { return [] }
+        return try await withPersistenceError {
+            var descriptor = FetchDescriptor<MealRecordModel>(
+                sortBy: [SortDescriptor(\.occurredAt)]
+            )
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = limit
+            return try await store.fetch(descriptor).map { $0.toDomain() }
+        }
+    }
+
     func save(_ meal: MealRecord) async throws {
         try await withPersistenceError {
             let id = meal.id
