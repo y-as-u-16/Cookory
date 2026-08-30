@@ -32,6 +32,12 @@ enum L10n {
     static func daysSinceLastCooked(_ days: Int) -> LocalizedStringResource {
         t("home.forgotten.days \(days)")
     }
+    static func homeWeeklyCount(_ days: Int) -> LocalizedStringResource {
+        t("home.summary.week \(days)")
+    }
+    static func homeTotalCount(_ records: Int, _ dishes: Int) -> LocalizedStringResource {
+        t("home.summary.total \(records) \(dishes)")
+    }
 
     // 撮影
     static var captureTitle: LocalizedStringResource { t("capture.title") }

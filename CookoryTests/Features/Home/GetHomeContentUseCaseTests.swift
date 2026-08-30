@@ -134,3 +134,102 @@ struct GetHomeContentUseCaseTests {
         #expect(content.forgottenDishes.isEmpty)
     }
 }
+
+/// 記録が増えるほど出せるものが増える構成の検証。
+struct HomeProgressiveContentTests {
+    private func make() -> (GetHomeContentUseCase, InMemoryMealRecordRepository, InMemoryDishRepository) {
+        let meals = InMemoryMealRecordRepository()
+        let dishes = InMemoryDishRepository()
+        return (GetHomeContentUseCase(mealRepository: meals, dishRepository: dishes), meals, dishes)
+    }
+
+    private var now: Date { Date(timeIntervalSince1970: 1_700_000_000) }
+
+    private func daysAgo(_ days: Int) -> Date {
+        now.addingTimeInterval(-Double(days) * 86_400)
+    }
+
+    private func name(_ raw: String) throws -> DishName {
+        try #require(DishName(raw))
+    }
+
+    @Test func 記録が少ないうちは集計を出さない() async throws {
+        let (useCase, meals, _) = make()
+        try await meals.save(MealRecord(occurredAt: daysAgo(1)))
+
+        let content = try await useCase.execute(now: now)
+
+        #expect(!content.summary.isWorthShowing)
+    }
+
+    @Test func 記録が増えると集計が出る() async throws {
+        let (useCase, meals, _) = make()
+        for day in 1...4 {
+            try await meals.save(MealRecord(occurredAt: daysAgo(day)))
+        }
+
+        let content = try await useCase.execute(now: now)
+
+        #expect(content.summary.isWorthShowing)
+        #expect(content.summary.totalRecords == 4)
+        #expect(content.summary.daysCookedThisWeek == 4)
+    }
+
+    @Test func 料理の種類が数えられる() async throws {
+        let (useCase, meals, dishes) = make()
+        for day in 1...3 {
+            try await meals.save(MealRecord(occurredAt: daysAgo(day)))
+        }
+        try await dishes.save(Dish(name: try name("唐揚げ")))
+        try await dishes.save(Dish(name: try name("カレー")))
+
+        #expect(try await useCase.execute(now: now).summary.distinctDishes == 2)
+    }
+
+    /// 久しぶりの料理に写真が付く。文字だけでは思い出す手がかりにならない。
+    @Test func 久しぶりの料理に写真が付く() async throws {
+        let (useCase, meals, dishes) = make()
+        let photoID = UUID()
+        let meal = MealRecord(occurredAt: daysAgo(60)).addingPhoto(photoID)
+        try await meals.save(meal)
+        let dish = Dish(name: try name("ハンバーグ"))
+        try await dishes.save(dish)
+        try await dishes.save(
+            DishLog(dishID: dish.id, mealRecordID: meal.id, cookedAt: daysAgo(60))
+        )
+
+        let content = try await useCase.execute(now: now)
+
+        #expect(content.forgottenDishes.first?.latestPhotoID == photoID)
+    }
+
+    @Test func 写真の無い記録でも久しぶりに出る() async throws {
+        let (useCase, meals, dishes) = make()
+        let meal = MealRecord(occurredAt: daysAgo(60))
+        try await meals.save(meal)
+        let dish = Dish(name: try name("ハンバーグ"))
+        try await dishes.save(dish)
+        try await dishes.save(
+            DishLog(dishID: dish.id, mealRecordID: meal.id, cookedAt: daysAgo(60))
+        )
+
+        let content = try await useCase.execute(now: now)
+
+        #expect(content.forgottenDishes.count == 1)
+        #expect(content.forgottenDishes.first?.latestPhotoID == nil)
+    }
+
+    /// 全件を読むと記録が増えるほど重くなる。上限で打ち切る。
+    @Test func 通算件数は上限で打ち切る() async throws {
+        let (useCase, meals, _) = make()
+        for index in 0..<(GetHomeContentUseCase.totalCountCap + 20) {
+            try await meals.save(
+                MealRecord(occurredAt: now.addingTimeInterval(-Double(index) * 3600))
+            )
+        }
+
+        let content = try await useCase.execute(now: now)
+
+        #expect(content.summary.totalRecords >= GetHomeContentUseCase.totalCountCap)
+    }
+}

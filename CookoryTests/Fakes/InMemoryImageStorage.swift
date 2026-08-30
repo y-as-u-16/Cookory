@@ -43,6 +43,12 @@ actor InMemoryImageStorage: ImageStorage {
         return data
     }
 
+    func loadDisplayImage(id: UUID, maxDimension: Int) async throws -> Data {
+        try throwIfNeeded()
+        guard let data = originals[id] else { throw DomainError.notFound(id: id) }
+        return data
+    }
+
     func delete(id: UUID) async throws {
         try throwIfNeeded()
         originals.removeValue(forKey: id)
