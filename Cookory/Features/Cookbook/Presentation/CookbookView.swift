@@ -18,8 +18,12 @@ struct CookbookView: View {
                 ForEach(viewModel.items) { item in
                     Button { onSelectDish(item.dish.id) } label: {
                         CookbookRowView(item: item)
+                            // 行全体をタップ対象にする。label だけだと余白が
+                            // 反応せず、行の端を押しても遷移しない。
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("cookbookRow")
                 }
                 if viewModel.hasMore {
                     ProgressView()

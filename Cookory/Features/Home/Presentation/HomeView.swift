@@ -69,11 +69,12 @@ struct HomeView: View {
     private func loadedContent(_ content: HomeContent) -> some View {
         if !content.recentMeals.isEmpty {
             TitledSection(title: "最近の料理") {
-                ForEach(content.recentMeals) { meal in
-                    Button { onSelectMeal(meal.id) } label: {
-                        MealRowView(meal: meal)
+                ForEach(content.recentMeals) { recent in
+                    Button { onSelectMeal(recent.meal.id) } label: {
+                        MealRowView(meal: recent.meal, title: recent.title)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("recentMealRow")
                 }
             }
         }

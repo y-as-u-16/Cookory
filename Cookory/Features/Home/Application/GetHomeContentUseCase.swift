@@ -20,9 +20,26 @@ struct GetHomeContentUseCase: Sendable {
 
     func execute(now: Date = Date(), calendar: Calendar = .current) async throws -> HomeContent {
         HomeContent(
-            recentMeals: try await mealRepository.fetchRecent(limit: Self.recentMealLimit),
+            recentMeals: try await recentMeals(),
             forgottenDishes: try await forgottenDishes(now: now, calendar: calendar)
         )
+    }
+
+    /// 記録に紐づく料理名を解決する。
+    private func recentMeals() async throws -> [RecentMeal] {
+        var results: [RecentMeal] = []
+
+        for meal in try await mealRepository.fetchRecent(limit: Self.recentMealLimit) {
+            var names: [DishName] = []
+            for log in try await dishRepository.fetchLogs(mealRecordID: meal.id) {
+                if let dish = try await dishRepository.find(id: log.dishID) {
+                    names.append(dish.name)
+                }
+            }
+            results.append(RecentMeal(meal: meal, dishNames: names))
+        }
+
+        return results
     }
 
     private func forgottenDishes(now: Date, calendar: Calendar) async throws -> [ForgottenDish] {

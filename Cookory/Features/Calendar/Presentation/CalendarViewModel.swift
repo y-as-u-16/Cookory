@@ -72,6 +72,20 @@ final class CalendarViewModel {
         }
     }
 
+    /// 週の並びに合わせるため、月初の前に入れる空きマスの数。
+    /// これが無いと 1 日が常に左端に来て、曜日と日付がずれる。
+    var leadingBlankCount: Int {
+        let weekday = calendar.component(.weekday, from: displayedMonth)
+        return (weekday - calendar.firstWeekday + 7) % 7
+    }
+
+    /// 曜日の見出し。firstWeekday はロケールで変わるため並べ替える。
+    var weekdaySymbols: [String] {
+        let symbols = calendar.shortStandaloneWeekdaySymbols
+        let offset = calendar.firstWeekday - 1
+        return Array(symbols[offset...] + symbols[..<offset])
+    }
+
     private func clearSelection() {
         selectedDate = nil
         selectedDayMeals = []

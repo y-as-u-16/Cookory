@@ -61,6 +61,10 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 fastlane/README.md
 
+# 審査担当者向けの連絡先（氏名・電話番号・メール）。
+# パブリックリポジトリのため公開しない。
+fastlane/metadata/review_information/
+
 # Fastlane の環境変数（Team ID を含むため公開しない）
 .env.fastlane
 
