@@ -22,17 +22,17 @@ struct MealDetailView: View {
         Form {
             content
         }
-        .navigationTitle("記録")
+        .navigationTitle(Text(L10n.mealDetailTitle))
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.load() }
         .confirmationDialog(
-            "この記録を削除しますか？", isPresented: $isConfirmingDelete, titleVisibility: .visible
+            Text(L10n.mealDetailDeleteConfirm), isPresented: $isConfirmingDelete, titleVisibility: .visible
         ) {
-            Button("削除", role: .destructive) {
+            Button(String(localized: L10n.mealDetailDelete), role: .destructive) {
                 Task { if await viewModel.deleteMeal() { onDeleted() } }
             }
         } message: {
-            Text("写真と料理の履歴もあわせて削除されます。")
+            Text(L10n.mealDetailDeleteMessage)
         }
     }
 
@@ -51,7 +51,7 @@ struct MealDetailView: View {
                 Section { Text(message).font(.footnote).foregroundStyle(.red) }
             }
             Section {
-                Button("この記録を削除", role: .destructive) { isConfirmingDelete = true }
+                Button(String(localized: L10n.mealDetailDelete), role: .destructive) { isConfirmingDelete = true }
             }
         }
     }
@@ -72,7 +72,7 @@ struct MealDetailView: View {
     }
 
     private func dishSection(_ detail: MealDetail) -> some View {
-        Section("作った料理") {
+        Section(String(localized: L10n.mealDetailDishesSection)) {
             ForEach(detail.dishes) { entry in
                 Button { onSelectDish(entry.dish.id) } label: {
                     MealDishRowView(entry: entry)
@@ -82,10 +82,10 @@ struct MealDetailView: View {
             }
 
             HStack {
-                TextField("料理名を追加", text: $viewModel.dishNameDraft)
+                TextField(String(localized: L10n.mealDetailAddDish), text: $viewModel.dishNameDraft)
                     .submitLabel(.done)
                     .onSubmit { Task { await viewModel.addDish() } }
-                Button("追加") {
+                Button(String(localized: L10n.mealDetailAdd)) {
                     Task { await viewModel.addDish() }
                 }
                 .disabled(!viewModel.canAddDish)
@@ -94,18 +94,18 @@ struct MealDetailView: View {
     }
 
     private func noteSection(_ detail: MealDetail) -> some View {
-        Section("この日のこと") {
-            Picker("食事の種類", selection: $viewModel.mealTypeDraft) {
-                Text("指定なし").tag(MealType?.none)
+        Section(String(localized: L10n.mealDetailNoteSection)) {
+            Picker(String(localized: L10n.mealDetailMealType), selection: $viewModel.mealTypeDraft) {
+                Text(L10n.mealTypeUnspecified).tag(MealType?.none)
                 ForEach(MealType.allCases, id: \.self) { type in
                     Text(type.displayName).tag(MealType?.some(type))
                 }
             }
 
-            TextField("メモ", text: $viewModel.noteDraft, axis: .vertical)
+            TextField(String(localized: L10n.mealDetailNote), text: $viewModel.noteDraft, axis: .vertical)
                 .lineLimit(3...8)
 
-            Button("保存") {
+            Button(String(localized: L10n.mealDetailSave)) {
                 Task { await viewModel.saveMeal() }
             }
         }
@@ -114,12 +114,12 @@ struct MealDetailView: View {
 
 extension MealType {
     /// 表示名は Presentation の責務。Domain 側には持たせない。
-    var displayName: String {
+    var displayName: LocalizedStringResource {
         switch self {
-        case .breakfast: "朝食"
-        case .lunch: "昼食"
-        case .dinner: "夕食"
-        case .snack: "軽食"
+        case .breakfast: L10n.mealTypeBreakfast
+        case .lunch: L10n.mealTypeLunch
+        case .dinner: L10n.mealTypeDinner
+        case .snack: L10n.mealTypeSnack
         }
     }
 }

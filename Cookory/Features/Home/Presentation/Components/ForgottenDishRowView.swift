@@ -8,7 +8,7 @@ struct ForgottenDishRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(forgotten.dish.name.value)
                     .font(.body.weight(.medium))
-                Text("最後に作ったのは \(forgotten.daysSinceLastCooked) 日前")
+                Text(L10n.daysSinceLastCooked(forgotten.daysSinceLastCooked))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

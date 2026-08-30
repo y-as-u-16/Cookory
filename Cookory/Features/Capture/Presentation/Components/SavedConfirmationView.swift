@@ -13,12 +13,12 @@ struct SavedConfirmationView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(.green)
-            Text(photoCount == 1 ? "保存しました" : "\(photoCount)枚 保存しました")
+            Text(L10n.captureSavedCount(photoCount))
                 .font(.title2.weight(.semibold))
 
-            Button("料理名やメモを書く", action: onAddDetails)
+            Button(String(localized: L10n.captureAddDetails), action: onAddDetails)
                 .buttonStyle(.borderedProminent)
-            Button("続けて記録する", action: onDone)
+            Button(String(localized: L10n.captureContinue), action: onDone)
                 .buttonStyle(.bordered)
         }
     }

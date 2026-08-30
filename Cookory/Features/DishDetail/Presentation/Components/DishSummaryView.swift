@@ -7,11 +7,11 @@ struct DishSummaryView: View {
         VStack(alignment: .leading, spacing: 12) {
             PhotoThumbnailView(photoID: history.latestPhotoID, size: 200)
                 .frame(maxWidth: .infinity)
-            Text("\(history.cookCount)回作りました")
+            Text(L10n.dishCookCount(history.cookCount))
                 .font(.title3.weight(.semibold))
                 .accessibilityIdentifier("dishCookCount")
             if let lastCookedAt = history.lastCookedAt {
-                Text("最終 \(lastCookedAt.formatted(date: .numeric, time: .omitted))")
+                Text(L10n.dishLastCooked(lastCookedAt.formatted(date: .numeric, time: .omitted)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

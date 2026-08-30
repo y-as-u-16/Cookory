@@ -16,7 +16,20 @@ struct DishDetailView: View {
         }
         .navigationTitle(viewModel.history?.dish.name.value ?? "")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { favoriteButton }
+        .toolbar {
+            shareButton
+            favoriteButton
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { viewModel.shareImage != nil },
+                set: { if !$0 { viewModel.dismissShare() } }
+            )
+        ) {
+            if let image = viewModel.shareImage {
+                ShareSheetView(image: image)
+            }
+        }
         .task { await viewModel.load() }
     }
 
@@ -31,14 +44,14 @@ struct DishDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 DishSummaryView(history: history)
                 Button(action: onOpenRecipe) {
-                    Label("作り方を見る・書く", systemImage: "list.bullet.rectangle")
+                    Label(L10n.dishOpenRecipe, systemImage: "list.bullet.rectangle")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                 }
                 .buttonStyle(.bordered)
                 if !history.entries.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("履歴").font(.headline)
+                        Text(L10n.dishHistoryTitle).font(.headline)
                         ForEach(history.entries) { entry in
                             DishHistoryRowView(entry: entry)
                         }
@@ -46,6 +59,22 @@ struct DishDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private var shareButton: some View {
+        if viewModel.history != nil {
+            Button {
+                Task { await viewModel.prepareShare() }
+            } label: {
+                if viewModel.isPreparingShare {
+                    ProgressView()
+                } else {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
+            .accessibilityLabel(Text(L10n.dishShare))
         }
     }
 
@@ -58,7 +87,32 @@ struct DishDetailView: View {
                 Image(systemName: history.dish.isFavorite ? "heart.fill" : "heart")
                     .foregroundStyle(history.dish.isFavorite ? .pink : .secondary)
             }
-            .accessibilityLabel(history.dish.isFavorite ? "お気に入りを解除" : "お気に入りに追加")
+            .accessibilityLabel(Text(history.dish.isFavorite ? L10n.dishRemoveFavorite : L10n.dishAddFavorite))
         }
+    }
+}
+
+/// 共有シート。画像のプレビューを添えて渡す。
+private struct ShareSheetView: View {
+    let image: ShareImage
+
+    var body: some View {
+        VStack(spacing: 20) {
+            if let uiImage = UIImage(data: image.data) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 420)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            ShareLink(item: image, preview: SharePreview("Cookory")) {
+                Label(L10n.dishShare, systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .presentationDetents([.large])
     }
 }

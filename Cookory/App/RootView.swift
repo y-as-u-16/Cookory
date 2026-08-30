@@ -12,9 +12,9 @@ struct RootView: View {
             MainTabView(container: container, routers: appEnvironment.routers)
         case .failed:
             ContentUnavailableView(
-                "データを読み込めませんでした",
+                String(localized: L10n.loadFailedTitle),
                 systemImage: "exclamationmark.triangle",
-                description: Text("アプリを再起動してください")
+                description: Text(L10n.loadFailedDescription)
             )
         }
     }
@@ -115,7 +115,9 @@ private struct TabStack: View {
         case .dishDetail(let id):
             DishDetailView(
                 viewModel: DishDetailViewModel(
-                    dishID: id, getDishHistory: container.getDishHistory
+                    dishID: id,
+                    getDishHistory: container.getDishHistory,
+                    shareDish: container.shareDish
                 ),
                 onOpenRecipe: { router.push(.recipe(id)) }
             )
@@ -149,12 +151,12 @@ private struct TabStack: View {
 }
 
 extension AppTab {
-    var title: String {
+    var title: LocalizedStringResource {
         switch self {
-        case .home: "ホーム"
-        case .calendar: "カレンダー"
-        case .cookbook: "図鑑"
-        case .search: "検索"
+        case .home: L10n.tabHome
+        case .calendar: L10n.tabCalendar
+        case .cookbook: L10n.tabCookbook
+        case .search: L10n.tabSearch
         }
     }
 

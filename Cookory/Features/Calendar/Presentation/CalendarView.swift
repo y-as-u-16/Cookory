@@ -25,7 +25,7 @@ struct CalendarView: View {
             }
             .padding()
         }
-        .navigationTitle("カレンダー")
+        .navigationTitle(Text(L10n.calendarTitle))
         .task { await viewModel.load() }
     }
 
@@ -78,7 +78,7 @@ struct CalendarView: View {
         if viewModel.selectedDate != nil {
             VStack(alignment: .leading, spacing: 12) {
                 if viewModel.selectedDayMeals.isEmpty {
-                    Text("この日の記録はありません")
+                    Text(L10n.calendarNoRecord)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {

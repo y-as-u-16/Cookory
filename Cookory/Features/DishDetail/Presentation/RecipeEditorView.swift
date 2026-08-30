@@ -10,18 +10,18 @@ struct RecipeEditorView: View {
 
     var body: some View {
         Form {
-            Section("材料") {
-                TextField("鶏もも肉 300g\n醤油 大さじ2", text: $viewModel.ingredientsDraft, axis: .vertical)
+            Section(String(localized: L10n.recipeIngredients)) {
+                TextField("", text: $viewModel.ingredientsDraft, axis: .vertical)
                     .lineLimit(4...12)
             }
 
-            Section("手順") {
-                TextField("1. 下味をつけて30分置く", text: $viewModel.stepsDraft, axis: .vertical)
+            Section(String(localized: L10n.recipeSteps)) {
+                TextField("", text: $viewModel.stepsDraft, axis: .vertical)
                     .lineLimit(4...16)
             }
 
             Section {
-                Button("保存") {
+                Button(String(localized: L10n.recipeSave)) {
                     Task { await viewModel.save() }
                 }
             }
@@ -32,13 +32,13 @@ struct RecipeEditorView: View {
                 Section { Text(message).font(.footnote).foregroundStyle(.red) }
             }
         }
-        .navigationTitle("作り方")
+        .navigationTitle(Text(L10n.recipeTitle))
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.load() }
     }
 
     private var linkSection: some View {
-        Section("参考リンク") {
+        Section(String(localized: L10n.recipeLinks)) {
             ForEach(viewModel.links) { link in
                 HStack {
                     Link(destination: link.url) {
@@ -52,7 +52,7 @@ struct RecipeEditorView: View {
                         Image(systemName: "minus.circle.fill").foregroundStyle(.red)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(link.displayName) を削除")
+                    .accessibilityLabel(link.displayName)
                 }
             }
 
@@ -60,9 +60,9 @@ struct RecipeEditorView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .keyboardType(.URL)
-            TextField("名前（任意）", text: $viewModel.linkTitleDraft)
+            TextField(String(localized: L10n.recipeLinkName), text: $viewModel.linkTitleDraft)
 
-            Button("リンクを追加") {
+            Button(String(localized: L10n.recipeAddLink)) {
                 Task { await viewModel.addLink() }
             }
             .disabled(!viewModel.canAddLink)

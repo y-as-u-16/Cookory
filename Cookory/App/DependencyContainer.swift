@@ -78,6 +78,10 @@ extension DependencyContainer {
         )
     }
 
+    var shareDish: ShareDishUseCase {
+        ShareDishUseCase(getDishHistory: getDishHistory, imageStorage: imageStorage)
+    }
+
     var getMealDetail: GetMealDetailUseCase {
         GetMealDetailUseCase(mealRepository: mealRepository, dishRepository: dishRepository)
     }

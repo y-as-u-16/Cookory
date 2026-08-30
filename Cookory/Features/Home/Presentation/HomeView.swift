@@ -27,14 +27,14 @@ struct HomeView: View {
             }
             .padding()
         }
-        .navigationTitle("今日のごはん")
+        .navigationTitle(Text(L10n.homeTitle))
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
     }
 
     private var recordButton: some View {
         Button(action: onRecord) {
-            Label("料理を記録", systemImage: "plus.circle.fill")
+            Label(L10n.homeRecordButton, systemImage: "plus.circle.fill")
                 .font(.title3.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
@@ -58,9 +58,9 @@ struct HomeView: View {
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label("まだ記録がありません", systemImage: "fork.knife")
+            Label(L10n.homeEmptyTitle, systemImage: "fork.knife")
         } description: {
-            Text("作った料理を写真で残しておくと、ここに並びます。")
+            Text(L10n.homeEmptyDescription)
         }
         .frame(maxWidth: .infinity)
     }
@@ -68,7 +68,7 @@ struct HomeView: View {
     @ViewBuilder
     private func loadedContent(_ content: HomeContent) -> some View {
         if !content.recentMeals.isEmpty {
-            TitledSection(title: "最近の料理") {
+            TitledSection(title: L10n.homeRecentTitle) {
                 ForEach(content.recentMeals) { recent in
                     Button { onSelectMeal(recent.meal.id) } label: {
                         MealRowView(meal: recent.meal, title: recent.title)
@@ -80,7 +80,7 @@ struct HomeView: View {
         }
 
         if !content.forgottenDishes.isEmpty {
-            TitledSection(title: "久しぶりにどう？") {
+            TitledSection(title: L10n.homeForgottenTitle) {
                 ForEach(content.forgottenDishes) { forgotten in
                     Button { onSelectDish(forgotten.dish.id) } label: {
                         ForgottenDishRowView(forgotten: forgotten)
@@ -94,7 +94,7 @@ struct HomeView: View {
 
 /// 見出し付きのまとまり。SwiftUI の Section は List 前提のため自前で持つ。
 private struct TitledSection<Content: View>: View {
-    let title: String
+    let title: LocalizedStringResource
     @ViewBuilder let content: Content
 
     var body: some View {

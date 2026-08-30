@@ -22,7 +22,7 @@ struct CookbookRowView: View {
                 }
             }
             Spacer()
-            Text("\(item.cookCount)回")
+            Text(L10n.cookCount(item.cookCount))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
