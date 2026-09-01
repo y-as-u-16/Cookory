@@ -48,7 +48,7 @@ struct DishDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
                 if !history.entries.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
                         Text(L10n.dishHistoryTitle).font(.headline)
@@ -110,7 +110,7 @@ private struct ShareSheetView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
         }
         .padding()
         .presentationDetents([.large])

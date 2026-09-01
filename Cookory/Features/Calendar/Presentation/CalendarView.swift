@@ -75,7 +75,8 @@ struct CalendarView: View {
                 .font(.headline)
         }
 
-        ToolbarItem(placement: .topBarTrailing) {
+        // 右端は設定ボタンが使う。月送りは 2 つとも左へ寄せる。
+        ToolbarItem(placement: .topBarLeading) {
             Button { Task { await viewModel.showNextMonth() } } label: {
                 Image(systemName: "chevron.right")
             }

@@ -103,17 +103,20 @@ private struct TabStack: View {
                 ),
                 onSelectMeal: { router.push(.mealDetail($0)) }
             )
+            .toolbar { settingsButton }
         case .cookbook:
             CookbookView(
                 viewModel: CookbookViewModel(query: container.cookbookQuery),
                 onSelectDish: { router.push(.dishDetail($0)) }
             )
+            .toolbar { settingsButton }
         case .search:
             SearchView(
                 viewModel: SearchViewModel(query: container.searchQuery),
                 onSelectDish: { router.push(.dishDetail($0)) },
                 onSelectMeal: { router.push(.mealDetail($0)) }
             )
+            .toolbar { settingsButton }
         }
     }
 
@@ -122,7 +125,7 @@ private struct TabStack: View {
             Button { router.push(.settings) } label: {
                 Image(systemName: "gearshape")
             }
-            .accessibilityLabel("設定")
+            .accessibilityLabel(Text(L10n.settingsOpen))
         }
     }
 
