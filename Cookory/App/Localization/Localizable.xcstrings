@@ -1616,6 +1616,38 @@
           }
         }
       }
+    },
+    "recipe.placeholder.ingredients": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鶏もも肉 300g\n醤油 大さじ2"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "300g chicken thigh\n2 tbsp soy sauce"
+          }
+        }
+      }
+    },
+    "recipe.placeholder.steps": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. 下味をつけて 30 分おく\n2. 180℃ で揚げる"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. Marinate for 30 min\n2. Fry at 180°C"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

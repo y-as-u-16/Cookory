@@ -2,6 +2,13 @@ import Foundation
 import Testing
 @testable import Cookory
 
+/// 削除を検証しないテスト向けの置き石。
+private let stubDelete = DeleteMealRecordUseCase(
+    mealRepository: InMemoryMealRecordRepository(),
+    dishRepository: InMemoryDishRepository(),
+    imageStorage: InMemoryImageStorage()
+)
+
 @MainActor
 struct CalendarViewModelTests {
     private var tokyo: Calendar {
@@ -19,7 +26,7 @@ struct CalendarViewModelTests {
 
     @Test func 表示月は起点の月になる() throws {
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         #expect(viewModel.displayedMonth == (try date("2026-08-01 00:00")))
@@ -27,7 +34,7 @@ struct CalendarViewModelTests {
 
     @Test func その月の日数だけ並ぶ() throws {
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         #expect(viewModel.daysInDisplayedMonth.count == 31)
@@ -35,7 +42,7 @@ struct CalendarViewModelTests {
 
     @Test func 前の月へ移動できる() async throws {
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         await viewModel.showPreviousMonth()
@@ -46,7 +53,7 @@ struct CalendarViewModelTests {
 
     @Test func 次の月へ移動できる() async throws {
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         await viewModel.showNextMonth()
@@ -60,7 +67,7 @@ struct CalendarViewModelTests {
         let day = try date("2026-08-05 00:00")
         await query.setMeals([MealRecord(occurredAt: try date("2026-08-05 19:00"))], on: day)
         let viewModel = CalendarViewModel(
-            query: query, calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: query, deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         await viewModel.select(try date("2026-08-05 19:00"))
@@ -75,7 +82,7 @@ struct CalendarViewModelTests {
         let day = try date("2026-08-05 00:00")
         await query.setMeals([MealRecord(occurredAt: day)], on: day)
         let viewModel = CalendarViewModel(
-            query: query, calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: query, deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
         await viewModel.select(day)
 
@@ -92,7 +99,7 @@ struct CalendarViewModelTests {
             [CalendarDaySummary(date: day, mealCount: 2, thumbnailID: nil)], year: 2026, month: 8
         )
         let viewModel = CalendarViewModel(
-            query: query, calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: query, deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
         await viewModel.load()
 
@@ -104,7 +111,7 @@ struct CalendarViewModelTests {
         let query = StubCalendarMealQuery()
         await query.setError(.persistenceFailed)
         let viewModel = CalendarViewModel(
-            query: query, calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: query, deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         await viewModel.load()
@@ -134,7 +141,7 @@ struct CalendarLayoutTests {
     @Test func 月初の曜日に合わせて空きマスが入る() throws {
         // 2026-08-01 は土曜日。日曜始まりなら空きマスは 6 つ。
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         #expect(viewModel.leadingBlankCount == 6)
@@ -143,7 +150,7 @@ struct CalendarLayoutTests {
     @Test func 月初が週の先頭なら空きマスは0() throws {
         // 2026-11-01 は日曜日。
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-11-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-11-15 12:00")
         )
 
         #expect(viewModel.leadingBlankCount == 0)
@@ -154,7 +161,7 @@ struct CalendarLayoutTests {
         var mondayFirst = tokyo
         mondayFirst.firstWeekday = 2
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: mondayFirst, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: mondayFirst, now: try date("2026-08-15 12:00")
         )
 
         // 土曜日は月曜始まりで 6 番目。空きマスは 5 つ。
@@ -163,7 +170,7 @@ struct CalendarLayoutTests {
 
     @Test func 曜日の見出しは7つある() throws {
         let viewModel = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
 
         #expect(viewModel.weekdaySymbols.count == 7)
@@ -173,10 +180,10 @@ struct CalendarLayoutTests {
         var mondayFirst = tokyo
         mondayFirst.firstWeekday = 2
         let sundayFirst = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: tokyo, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: tokyo, now: try date("2026-08-15 12:00")
         )
         let mondayStart = CalendarViewModel(
-            query: StubCalendarMealQuery(), calendar: mondayFirst, now: try date("2026-08-15 12:00")
+            query: StubCalendarMealQuery(), deleteMealRecord: stubDelete, calendar: mondayFirst, now: try date("2026-08-15 12:00")
         )
 
         #expect(sundayFirst.weekdaySymbols.first != mondayStart.weekdaySymbols.first)

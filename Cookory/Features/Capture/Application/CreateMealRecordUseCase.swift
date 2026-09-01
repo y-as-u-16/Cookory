@@ -28,17 +28,7 @@ struct CreateMealRecordUseCase: Sendable {
 
         // 画像を先に保存する。順序が逆だと、記録だけが残って写真の無い
         // 食事記録が生まれる。逆順なら孤児ファイルが残るだけで後から回収できる。
-        var assets: [PhotoAsset] = []
-        do {
-            for image in images {
-                assets.append(try await imageStorage.save(image))
-            }
-        } catch {
-            // 途中で失敗したら、それまでに保存した分も取り消す。
-            // 記録が作られない以上、参照する術がないため。
-            await rollback(assets)
-            throw error
-        }
+        let assets = try await saveImages(images)
 
         let meal = MealRecord(
             occurredAt: occurredAt,
@@ -54,6 +44,32 @@ struct CreateMealRecordUseCase: Sendable {
         }
 
         return meal
+    }
+
+    /// 写真をまとめて保存する。
+    ///
+    /// 1 枚ずつ順に処理すると、10 枚では 10 回ぶんの縮小と書き込みを待つことになる。
+    /// 撮影直後の待ち時間に直結するため並行に走らせ、撮った順は添字で復元する。
+    private func saveImages(_ images: [Data]) async throws -> [PhotoAsset] {
+        var saved: [Int: PhotoAsset] = [:]
+
+        do {
+            try await withThrowingTaskGroup(of: (Int, PhotoAsset).self) { group in
+                for (index, image) in images.enumerated() {
+                    group.addTask { (index, try await imageStorage.save(image)) }
+                }
+                for try await (index, asset) in group {
+                    saved[index] = asset
+                }
+            }
+        } catch {
+            // 失敗しても成功した分のファイルは残る。記録が作られない以上
+            // 参照する術がないため消す。
+            await rollback(Array(saved.values))
+            throw error
+        }
+
+        return images.indices.compactMap { saved[$0] }
     }
 
     /// 削除に失敗しても元のエラーを優先して伝えるため、結果は見ない。

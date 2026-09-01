@@ -44,57 +44,62 @@ struct MealDishRowView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
+            // 行のどこを押しても開く。文字とシェブロンの隙間が反応しないと、
+            // 狙って突く操作になる。
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     private var recipeFields: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            fieldLabel(L10n.recipeIngredients)
-            TextField("", text: $draft.ingredients, axis: .vertical)
-                .lineLimit(3...10)
-                .textFieldStyle(.roundedBorder)
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                RecipeFieldLabel(text: L10n.recipeIngredients)
+                TextField(String(localized: L10n.recipeIngredientsPlaceholder),
+                          text: $draft.ingredients, axis: .vertical)
+                    .lineLimit(3...10)
+                    .recipeFieldBackground()
+            }
 
-            fieldLabel(L10n.recipeSteps)
-            TextField("", text: $draft.steps, axis: .vertical)
-                .lineLimit(3...12)
-                .textFieldStyle(.roundedBorder)
+            VStack(alignment: .leading, spacing: 6) {
+                RecipeFieldLabel(text: L10n.recipeSteps)
+                TextField(String(localized: L10n.recipeStepsPlaceholder),
+                          text: $draft.steps, axis: .vertical)
+                    .lineLimit(3...12)
+                    .recipeFieldBackground()
+            }
         }
     }
 
     private var linkFields: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            fieldLabel(L10n.recipeLinks)
+        VStack(alignment: .leading, spacing: 6) {
+            RecipeFieldLabel(text: L10n.recipeLinks)
 
             ForEach(draft.links) { link in
-                HStack {
-                    Link(destination: link.url) {
-                        Label(link.displayName, systemImage: "link").lineLimit(1)
-                    }
-                    Spacer()
-                    Button {
-                        onRemoveLink(link.id)
-                    } label: {
-                        Image(systemName: "minus.circle.fill").foregroundStyle(.red)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(link.displayName)
-                }
-                .font(.footnote)
+                RecipeLinkChip(link: link) { onRemoveLink(link.id) }
             }
 
-            TextField("https://…", text: $draft.linkURL)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(.URL)
-                .textFieldStyle(.roundedBorder)
-            TextField(String(localized: L10n.recipeLinkName), text: $draft.linkTitle)
-                .textFieldStyle(.roundedBorder)
+            HStack(spacing: 8) {
+                VStack(spacing: 6) {
+                    TextField("https://…", text: $draft.linkURL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .recipeFieldBackground()
+                    TextField(String(localized: L10n.recipeLinkName), text: $draft.linkTitle)
+                        .recipeFieldBackground()
+                }
 
-            Button(String(localized: L10n.recipeAddLink), action: onAddLink)
-                .font(.footnote)
+                Button(action: onAddLink) {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.bordered)
                 .disabled(!draft.canAddLink)
+                .accessibilityLabel(Text(L10n.recipeAddLink))
+            }
         }
     }
 
@@ -107,11 +112,5 @@ struct MealDishRowView: View {
             Button(String(localized: L10n.mealDetailOpenDish), action: onOpenHistory)
                 .font(.footnote)
         }
-    }
-
-    private func fieldLabel(_ text: LocalizedStringResource) -> some View {
-        Text(text)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
     }
 }

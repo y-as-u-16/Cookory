@@ -120,6 +120,8 @@ enum L10n {
     static var recipeAddLink: LocalizedStringResource { t("recipe.button.addLink") }
     static var recipeLinkName: LocalizedStringResource { t("recipe.field.linkName") }
     static var recipeSave: LocalizedStringResource { t("recipe.button.save") }
+    static var recipeIngredientsPlaceholder: LocalizedStringResource { t("recipe.placeholder.ingredients") }
+    static var recipeStepsPlaceholder: LocalizedStringResource { t("recipe.placeholder.steps") }
 
     // 検索
     static var searchTitle: LocalizedStringResource { t("search.title") }

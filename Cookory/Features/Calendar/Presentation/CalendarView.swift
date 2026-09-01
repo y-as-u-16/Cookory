@@ -3,6 +3,9 @@ import SwiftUI
 /// 写真中心の月間カレンダー（APP_DESIGN.md #9）。
 struct CalendarView: View {
     @State private var viewModel: CalendarViewModel
+    @State private var pendingDeletion: UUID?
+    @State private var isConfirmingDelete = false
+
     private let onSelectMeal: (UUID) -> Void
 
     private static let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
@@ -13,20 +16,42 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                monthHeader
-                weekdayHeader
-                grid
-                if let message = viewModel.errorMessage {
-                    Text(message).font(.footnote).foregroundStyle(.secondary)
+        // List なのはその日の記録をスワイプで消せるようにするため。
+        // カレンダー部分は区切り線と余白を外して従来の見た目を保つ。
+        List {
+            Section {
+                VStack(spacing: 20) {
+                    monthHeader
+                    weekdayHeader
+                    grid
+                    if let message = viewModel.errorMessage {
+                        Text(message).font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
-                selectedDaySection
+                .padding(.vertical, 8)
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
-            .padding()
+
+            selectedDaySection
         }
+        .listStyle(.plain)
         .navigationTitle(Text(L10n.calendarTitle))
-        .task { await viewModel.load() }
+        // 詳細画面で削除して戻ったときに反映させるため、表示のたびに取り直す。
+        .onAppear { Task { await viewModel.reload() } }
+        .confirmationDialog(
+            Text(L10n.mealDetailDeleteConfirm),
+            isPresented: $isConfirmingDelete,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: L10n.mealDetailDelete), role: .destructive) {
+                guard let mealID = pendingDeletion else { return }
+                Task { await viewModel.delete(mealID: mealID) }
+            }
+        } message: {
+            Text(L10n.mealDetailDeleteMessage)
+        }
     }
 
     private var monthHeader: some View {
@@ -76,21 +101,30 @@ struct CalendarView: View {
     @ViewBuilder
     private var selectedDaySection: some View {
         if viewModel.selectedDate != nil {
-            VStack(alignment: .leading, spacing: 12) {
+            Section {
                 if viewModel.selectedDayMeals.isEmpty {
                     Text(L10n.calendarNoRecord)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .listRowSeparator(.hidden)
                 } else {
                     ForEach(viewModel.selectedDayMeals) { meal in
                         Button { onSelectMeal(meal.id) } label: {
                             MealRowView(meal: meal)
                         }
                         .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing) {
+                            // 記録は写真ごと消える。取り消せないので確認を挟む。
+                            Button(role: .destructive) {
+                                pendingDeletion = meal.id
+                                isConfirmingDelete = true
+                            } label: {
+                                Label(L10n.mealDetailDelete, systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
