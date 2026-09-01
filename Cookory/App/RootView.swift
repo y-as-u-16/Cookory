@@ -97,7 +97,10 @@ private struct TabStack: View {
             .toolbar { settingsButton }
         case .calendar:
             CalendarView(
-                viewModel: CalendarViewModel(query: container.calendarMealQuery),
+                viewModel: CalendarViewModel(
+                    query: container.calendarMealQuery,
+                    deleteMealRecord: container.deleteMealRecord
+                ),
                 onSelectMeal: { router.push(.mealDetail($0)) }
             )
         case .cookbook:
@@ -154,7 +157,11 @@ private struct TabStack: View {
             )
         case .calendar(let month):
             CalendarView(
-                viewModel: CalendarViewModel(query: container.calendarMealQuery, now: month),
+                viewModel: CalendarViewModel(
+                    query: container.calendarMealQuery,
+                    deleteMealRecord: container.deleteMealRecord,
+                    now: month
+                ),
                 onSelectMeal: { router.push(.mealDetail($0)) }
             )
         case .cookbook:

@@ -13,11 +13,18 @@ final class CalendarViewModel {
     private(set) var displayedMonth: Date
 
     private let query: CalendarMealQuery
+    private let deleteMealRecord: DeleteMealRecordUseCase
     private let calendar: Calendar
 
     /// - Parameter calendar: 月の境界判定に使う。端末設定でずれないようテストから差し替える。
-    init(query: CalendarMealQuery, calendar: Calendar = .current, now: Date = Date()) {
+    init(
+        query: CalendarMealQuery,
+        deleteMealRecord: DeleteMealRecordUseCase,
+        calendar: Calendar = .current,
+        now: Date = Date()
+    ) {
         self.query = query
+        self.deleteMealRecord = deleteMealRecord
         self.calendar = calendar
         self.displayedMonth = calendar.startOfMonth(for: now)
     }
@@ -57,6 +64,27 @@ final class CalendarViewModel {
             selectedDayMeals = []
             errorMessage = L10n.errorLoad
         }
+    }
+
+    /// 記録を消す。写真と調理履歴も一緒に消える。
+    func delete(mealID: UUID) async {
+        do {
+            try await deleteMealRecord.execute(id: mealID)
+            errorMessage = nil
+            await reload()
+        } catch {
+            errorMessage = L10n.errorGeneric
+        }
+    }
+
+    /// 表示中の内容を取り直す。
+    ///
+    /// 詳細画面で記録を消して戻ったとき、消えたはずの記録が残らないようにする。
+    /// `.task` は画面を積み直すまで再実行されないため、戻り際に明示して呼ぶ。
+    func reload() async {
+        await load()
+        guard let selectedDate else { return }
+        await select(selectedDate)
     }
 
     func summary(for date: Date) -> CalendarDaySummary? {

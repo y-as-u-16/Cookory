@@ -153,3 +153,36 @@ struct CreateMealRecordMultiPhotoTests {
         #expect(await storage.savedCount == 0)
     }
 }
+
+/// 並行保存でも撮った順が崩れないことを確かめる。
+struct CreateMealRecordOrderTests {
+    @Test func 写真の順序が保たれる() async throws {
+        let storage = InMemoryImageStorage()
+        let useCase = CreateMealRecordUseCase(
+            mealRepository: InMemoryMealRecordRepository(), imageStorage: storage
+        )
+        let images = (0..<10).map { Data("photo-\($0)".utf8) }
+
+        let meal = try await useCase.execute(images: images, occurredAt: Date())
+
+        #expect(meal.photoIDs.count == 10)
+        for (index, photoID) in meal.photoIDs.enumerated() {
+            #expect(try await storage.load(id: photoID) == images[index])
+        }
+    }
+
+    /// 1 枚でも失敗したら記録を作らず、成功した分のファイルも残さない。
+    @Test func 途中で失敗すると保存済みの写真も消える() async throws {
+        let storage = InMemoryImageStorage()
+        await storage.setError(.imageStorageFailed)
+        let repository = InMemoryMealRecordRepository()
+        let useCase = CreateMealRecordUseCase(mealRepository: repository, imageStorage: storage)
+
+        await #expect(throws: DomainError.imageStorageFailed) {
+            try await useCase.execute(images: [Data("a".utf8), Data("b".utf8)], occurredAt: Date())
+        }
+
+        #expect(await storage.savedCount == 0)
+        #expect(await repository.count == 0)
+    }
+}

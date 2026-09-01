@@ -34,7 +34,8 @@ struct HomeView: View {
             .padding(.bottom, 24)
         }
         .navigationTitle(Text(L10n.homeTitle))
-        .task { await viewModel.load() }
+        // 詳細画面で削除して戻ったときに反映させるため、表示のたびに取り直す。
+        .onAppear { Task { await viewModel.load() } }
         .refreshable { await viewModel.load() }
     }
 

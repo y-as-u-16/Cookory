@@ -13,9 +13,9 @@ actor LocalImageStorage: ImageStorage {
     private static let thumbnailDimension: CGFloat = 400
     private static let compressionQuality: CGFloat = 0.85
 
-    private let originalsDirectory: URL
-    private let thumbnailsDirectory: URL
-    private let fileManager: FileManager
+    private nonisolated let originalsDirectory: URL
+    private nonisolated let thumbnailsDirectory: URL
+    private nonisolated let fileManager: FileManager
 
     init(
         originalsDirectory: URL? = nil,
@@ -40,7 +40,7 @@ actor LocalImageStorage: ImageStorage {
             .appendingPathComponent("Images", isDirectory: true)
     }
 
-    func save(_ data: Data) async throws -> PhotoAsset {
+    nonisolated func save(_ data: Data) async throws -> PhotoAsset {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
             throw DomainError.imageStorageFailed
         }
@@ -121,25 +121,25 @@ actor LocalImageStorage: ImageStorage {
 
     // MARK: - Paths
 
-    private func originalDirectory(for id: UUID) -> URL {
+    private nonisolated func originalDirectory(for id: UUID) -> URL {
         originalsDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
     }
 
-    private func thumbnailDirectory(for id: UUID) -> URL {
+    private nonisolated func thumbnailDirectory(for id: UUID) -> URL {
         thumbnailsDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
     }
 
-    private func originalURL(for id: UUID, filename: String) -> URL {
+    private nonisolated func originalURL(for id: UUID, filename: String) -> URL {
         originalDirectory(for: id).appendingPathComponent(filename)
     }
 
-    private func thumbnailURL(for id: UUID) -> URL {
+    private nonisolated func thumbnailURL(for id: UUID) -> URL {
         thumbnailDirectory(for: id).appendingPathComponent("thumbnail.jpg")
     }
 
     // MARK: - Writing
 
-    private func writeThumbnail(from source: CGImageSource, id: UUID) throws {
+    private nonisolated func writeThumbnail(from source: CGImageSource, id: UUID) throws {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
@@ -152,7 +152,7 @@ actor LocalImageStorage: ImageStorage {
     }
 
     /// メモリ上で JPEG にする。ファイルに残さない用途で使う。
-    private func encodeJPEG(_ image: CGImage) throws -> Data {
+    private nonisolated func encodeJPEG(_ image: CGImage) throws -> Data {
         let output = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(
             output, UTType.jpeg.identifier as CFString, 1, nil
@@ -168,7 +168,7 @@ actor LocalImageStorage: ImageStorage {
         return output as Data
     }
 
-    private func write(_ image: CGImage, to url: URL) throws {
+    private nonisolated func write(_ image: CGImage, to url: URL) throws {
         try fileManager.createDirectory(
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true
         )

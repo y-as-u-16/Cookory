@@ -40,12 +40,12 @@ private struct RecipeContentFields: View {
 
     var body: some View {
         Section(String(localized: L10n.recipeIngredients)) {
-            TextField("", text: $draft.ingredients, axis: .vertical)
+            TextField(String(localized: L10n.recipeIngredientsPlaceholder), text: $draft.ingredients, axis: .vertical)
                 .lineLimit(4...12)
         }
 
         Section(String(localized: L10n.recipeSteps)) {
-            TextField("", text: $draft.steps, axis: .vertical)
+            TextField(String(localized: L10n.recipeStepsPlaceholder), text: $draft.steps, axis: .vertical)
                 .lineLimit(4...16)
         }
     }

@@ -35,7 +35,8 @@ struct CookbookView: View {
         .listStyle(.plain)
         .navigationTitle(Text(L10n.cookbookTitle))
         .toolbar { sortMenu }
-        .task { await viewModel.load() }
+        // 詳細画面で削除して戻ったときに反映させるため、表示のたびに取り直す。
+        .onAppear { Task { await viewModel.load() } }
         .refreshable { await viewModel.load() }
     }
 
