@@ -118,7 +118,6 @@ final class MealDetailViewModel {
 
     // MARK: - レシピ
 
-    /// 料理ごとの書きかけ。無ければ作る。
     func recipeDraft(for dishID: UUID) -> DishRecipeDraft {
         if let existing = recipeDrafts[dishID] { return existing }
         let draft = DishRecipeDraft()

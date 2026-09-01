@@ -1600,6 +1600,22 @@
           }
         }
       }
+    },
+    "camera.button.openSettings": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定を開く"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

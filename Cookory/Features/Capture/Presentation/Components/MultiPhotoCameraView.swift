@@ -1,10 +1,12 @@
 import SwiftUI
+import UIKit
 
 /// 続けて何枚でも撮れるカメラ画面。
 ///
 /// 撮っても閉じない。1 回の食卓に何品も並ぶため、
 /// 写真ライブラリから複数枚選ぶのと同じ枚数を撮影でも残せるようにする。
 struct MultiPhotoCameraView: View {
+    @Environment(\.openURL) private var openURL
     @State private var session: CameraSession
 
     private let onFinish: ([Data]) -> Void
@@ -22,6 +24,9 @@ struct MultiPhotoCameraView: View {
             content
         }
         .task { await session.start() }
+        // 「完了」以外の経路でも確実に止める。回したままだと
+        // プライバシーインジケータが点き続け、電池も減る。
+        .onDisappear { Task { await session.stop() } }
     }
 
     @ViewBuilder
@@ -32,7 +37,10 @@ struct MultiPhotoCameraView: View {
         case .running:
             camera
         case .denied:
-            message(L10n.cameraPermissionDenied)
+            message(L10n.cameraPermissionDenied) {
+                Button(String(localized: L10n.cameraOpenSettings), action: openSettings)
+                    .buttonStyle(.borderedProminent)
+            }
         case .unavailable:
             message(L10n.cameraUnavailable)
         }
@@ -61,7 +69,7 @@ struct MultiPhotoCameraView: View {
         VStack(spacing: 16) {
             thumbnails
             HStack {
-                Button(String(localized: L10n.cameraCancel), action: cancel)
+                Button(String(localized: L10n.cameraCancel), action: onCancel)
                     .foregroundStyle(.white)
                 Spacer()
                 shutter
@@ -99,14 +107,12 @@ struct MultiPhotoCameraView: View {
         if session.hasCaptured {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(Array(session.captured.enumerated()), id: \.offset) { _, data in
-                        if let image = UIImage(data: data) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 56, height: 56)
-                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        }
+                    ForEach(session.captured) { shot in
+                        Image(uiImage: shot.thumbnail)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
 
                     Button(action: session.undoLast) {
@@ -125,29 +131,27 @@ struct MultiPhotoCameraView: View {
         }
     }
 
-    private func message(_ text: LocalizedStringResource) -> some View {
+    private func message(
+        _ text: LocalizedStringResource,
+        @ViewBuilder action: () -> some View = { EmptyView() }
+    ) -> some View {
         VStack(spacing: 16) {
             Text(text)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Button(String(localized: L10n.cameraCancel), action: cancel)
-                .buttonStyle(.borderedProminent)
+            action()
+            Button(String(localized: L10n.cameraCancel), action: onCancel)
+                .foregroundStyle(.white)
         }
         .padding()
     }
 
     private func finish() {
-        let images = session.captured
-        Task {
-            await session.stop()
-            onFinish(images)
-        }
+        onFinish(session.capturedImages)
     }
 
-    private func cancel() {
-        Task {
-            await session.stop()
-            onCancel()
-        }
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
     }
 }

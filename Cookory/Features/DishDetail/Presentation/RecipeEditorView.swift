@@ -10,15 +10,7 @@ struct RecipeEditorView: View {
 
     var body: some View {
         Form {
-            Section(String(localized: L10n.recipeIngredients)) {
-                TextField("", text: $viewModel.ingredientsDraft, axis: .vertical)
-                    .lineLimit(4...12)
-            }
-
-            Section(String(localized: L10n.recipeSteps)) {
-                TextField("", text: $viewModel.stepsDraft, axis: .vertical)
-                    .lineLimit(4...16)
-            }
+            RecipeContentFields(draft: viewModel.draft)
 
             Section {
                 Button(String(localized: L10n.recipeSave)) {
@@ -26,7 +18,11 @@ struct RecipeEditorView: View {
                 }
             }
 
-            linkSection
+            RecipeLinkFields(
+                draft: viewModel.draft,
+                onAdd: { Task { await viewModel.addLink() } },
+                onRemove: { id in Task { await viewModel.removeLink(id: id) } }
+            )
 
             if let message = viewModel.errorMessage {
                 Section { Text(message).font(.footnote).foregroundStyle(.red) }
@@ -36,10 +32,34 @@ struct RecipeEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.load() }
     }
+}
 
-    private var linkSection: some View {
+/// 材料と手順。記録画面とこの画面で同じ書きかけを編集する。
+private struct RecipeContentFields: View {
+    @Bindable var draft: DishRecipeDraft
+
+    var body: some View {
+        Section(String(localized: L10n.recipeIngredients)) {
+            TextField("", text: $draft.ingredients, axis: .vertical)
+                .lineLimit(4...12)
+        }
+
+        Section(String(localized: L10n.recipeSteps)) {
+            TextField("", text: $draft.steps, axis: .vertical)
+                .lineLimit(4...16)
+        }
+    }
+}
+
+private struct RecipeLinkFields: View {
+    @Bindable var draft: DishRecipeDraft
+
+    let onAdd: () -> Void
+    let onRemove: (UUID) -> Void
+
+    var body: some View {
         Section(String(localized: L10n.recipeLinks)) {
-            ForEach(viewModel.links) { link in
+            ForEach(draft.links) { link in
                 HStack {
                     Link(destination: link.url) {
                         Label(link.displayName, systemImage: "link")
@@ -47,7 +67,7 @@ struct RecipeEditorView: View {
                     }
                     Spacer()
                     Button {
-                        Task { await viewModel.removeLink(id: link.id) }
+                        onRemove(link.id)
                     } label: {
                         Image(systemName: "minus.circle.fill").foregroundStyle(.red)
                     }
@@ -56,16 +76,14 @@ struct RecipeEditorView: View {
                 }
             }
 
-            TextField("https://…", text: $viewModel.linkURLDraft)
+            TextField("https://…", text: $draft.linkURL)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .keyboardType(.URL)
-            TextField(String(localized: L10n.recipeLinkName), text: $viewModel.linkTitleDraft)
+            TextField(String(localized: L10n.recipeLinkName), text: $draft.linkTitle)
 
-            Button(String(localized: L10n.recipeAddLink)) {
-                Task { await viewModel.addLink() }
-            }
-            .disabled(!viewModel.canAddLink)
+            Button(String(localized: L10n.recipeAddLink), action: onAdd)
+                .disabled(!draft.canAddLink)
         }
     }
 }

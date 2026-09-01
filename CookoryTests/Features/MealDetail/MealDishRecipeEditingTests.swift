@@ -176,3 +176,43 @@ struct MealDishRecipeEditingTests {
         #expect(try await dishes.findRecipe(dishID: dishID) == nil)
     }
 }
+
+/// 書きかけを守る仕組みが、他の画面で保存された内容を握り潰さないことを確かめる。
+@MainActor
+struct DishRecipeDraftTests {
+    @Test func 未編集の欄は最新の保存内容に追従する() throws {
+        let dishID = UUID()
+        let draft = DishRecipeDraft()
+        draft.apply(Recipe(dishID: dishID, ingredients: "旧", steps: "旧手順"))
+
+        // 別画面で書き換えられた状態。
+        draft.apply(Recipe(dishID: dishID, ingredients: "新", steps: "新手順"))
+
+        #expect(draft.ingredients == "新")
+        #expect(draft.steps == "新手順")
+    }
+
+    @Test func 編集した欄は最新の保存内容で上書きされない() throws {
+        let dishID = UUID()
+        let draft = DishRecipeDraft()
+        draft.apply(Recipe(dishID: dishID, ingredients: "旧", steps: "旧手順"))
+
+        draft.ingredients = "書きかけ"
+        draft.apply(Recipe(dishID: dishID, ingredients: "新", steps: "新手順"))
+
+        #expect(draft.ingredients == "書きかけ")
+        // 触っていない欄は追従してよい。
+        #expect(draft.steps == "新手順")
+    }
+
+    @Test func リンクは常に最新になる() throws {
+        let dishID = UUID()
+        let draft = DishRecipeDraft()
+        draft.apply(Recipe(dishID: dishID))
+        let link = try #require(RecipeLink(rawURL: "https://example.com"))
+
+        draft.apply(Recipe(dishID: dishID, links: [link]))
+
+        #expect(draft.links == [link])
+    }
+}

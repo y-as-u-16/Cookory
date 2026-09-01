@@ -57,6 +57,7 @@ enum L10n {
     static var cameraUndo: LocalizedStringResource { t("camera.button.undo") }
     static var cameraUnavailable: LocalizedStringResource { t("camera.unavailable") }
     static var cameraPermissionDenied: LocalizedStringResource { t("camera.permission.denied") }
+    static var cameraOpenSettings: LocalizedStringResource { t("camera.button.openSettings") }
     static func cameraCount(_ taken: Int, _ limit: Int) -> LocalizedStringResource {
         t("camera.count \(taken) \(limit)")
     }

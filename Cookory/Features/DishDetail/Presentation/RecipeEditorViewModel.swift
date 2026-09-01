@@ -1,17 +1,16 @@
 import Foundation
 import Observation
 
+/// 料理図鑑から開くレシピ編集画面の状態。
+///
+/// 書きかけとリンクの検証は ``DishRecipeDraft`` が持つ。記録画面と同じ部品を
+/// 使うことで、片方だけ直したつもりの修正が起きないようにする。
 @MainActor
 @Observable
 final class RecipeEditorViewModel {
-    private(set) var recipe: Recipe?
-    private(set) var errorMessage: LocalizedStringResource?
-    private(set) var isLoaded = false
+    let draft = DishRecipeDraft()
 
-    var ingredientsDraft: String = ""
-    var stepsDraft: String = ""
-    var linkURLDraft: String = ""
-    var linkTitleDraft: String = ""
+    private(set) var errorMessage: LocalizedStringResource?
 
     private let dishID: UUID
     private let editRecipe: EditRecipeUseCase
@@ -21,22 +20,13 @@ final class RecipeEditorViewModel {
         self.editRecipe = editRecipe
     }
 
-    var canAddLink: Bool {
-        RecipeLink(rawURL: linkURLDraft) != nil
-    }
+    var links: [RecipeLink] { draft.links }
 
-    var links: [RecipeLink] { recipe?.links ?? [] }
+    var canAddLink: Bool { draft.canAddLink }
 
     func load() async {
         do {
-            let recipe = try await editRecipe.find(dishID: dishID)
-            self.recipe = recipe
-            // 書きかけを消さないよう初回だけ反映する。
-            if !isLoaded {
-                ingredientsDraft = recipe.ingredients ?? ""
-                stepsDraft = recipe.steps ?? ""
-                isLoaded = true
-            }
+            draft.apply(try await editRecipe.find(dishID: dishID))
             errorMessage = nil
         } catch {
             errorMessage = L10n.errorLoad
@@ -45,9 +35,9 @@ final class RecipeEditorViewModel {
 
     func save() async {
         do {
-            recipe = try await editRecipe.updateContent(
-                dishID: dishID, ingredients: ingredientsDraft, steps: stepsDraft
-            )
+            draft.apply(try await editRecipe.updateContent(
+                dishID: dishID, ingredients: draft.ingredients, steps: draft.steps
+            ))
             errorMessage = nil
         } catch {
             errorMessage = L10n.errorSave
@@ -56,11 +46,10 @@ final class RecipeEditorViewModel {
 
     func addLink() async {
         do {
-            recipe = try await editRecipe.addLink(
-                dishID: dishID, rawURL: linkURLDraft, title: linkTitleDraft
-            )
-            linkURLDraft = ""
-            linkTitleDraft = ""
+            draft.apply(try await editRecipe.addLink(
+                dishID: dishID, rawURL: draft.linkURL, title: draft.linkTitle
+            ))
+            draft.clearLinkInput()
             errorMessage = nil
         } catch DomainError.invalidInput {
             // Domain の文言は利用者向けではない。表示は Presentation で決める。
@@ -72,7 +61,7 @@ final class RecipeEditorViewModel {
 
     func removeLink(id: UUID) async {
         do {
-            recipe = try await editRecipe.removeLink(dishID: dishID, linkID: id)
+            draft.apply(try await editRecipe.removeLink(dishID: dishID, linkID: id))
             errorMessage = nil
         } catch {
             errorMessage = L10n.errorGeneric
