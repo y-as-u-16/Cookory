@@ -24,7 +24,8 @@ struct MealDetailViewModelTests {
             deleteMealRecord: DeleteMealRecordUseCase(
                 mealRepository: meals, dishRepository: dishes, imageStorage: storage
             ),
-            editRecipe: EditRecipeUseCase(dishRepository: dishes)
+            editRecipe: EditRecipeUseCase(dishRepository: dishes, imageStorage: InMemoryImageStorage()),
+            removeDishFromMeal: RemoveDishFromMealUseCase(mealRepository: meals, dishRepository: dishes)
         )
     }
 
@@ -62,7 +63,7 @@ struct MealDetailViewModelTests {
 
         viewModel.noteDraft = "塩を控えめに"
         viewModel.mealTypeDraft = .lunch
-        await viewModel.saveMeal()
+        await viewModel.saveAll()
 
         let saved = try await meals.find(id: meal.id)
         #expect(saved?.note == "塩を控えめに")

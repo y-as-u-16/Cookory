@@ -15,6 +15,10 @@ final class RecipeModel {
     /// 別モデルに切り出すコストに見合わない。
     var linksJSON: String?
 
+    /// 添付したスクリーンショットの ID。リンクと同じ理由で JSON 文字列にする。
+    /// Optional なので既存データは軽量マイグレーションで nil のまま読める。
+    var photoIDsJSON: String?
+
     var createdAt: Date
     var updatedAt: Date
 
@@ -24,6 +28,7 @@ final class RecipeModel {
         ingredients: String?,
         steps: String?,
         linksJSON: String?,
+        photoIDsJSON: String?,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -32,6 +37,7 @@ final class RecipeModel {
         self.ingredients = ingredients
         self.steps = steps
         self.linksJSON = linksJSON
+        self.photoIDsJSON = photoIDsJSON
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

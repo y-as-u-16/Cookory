@@ -19,7 +19,8 @@ struct MealDishRecipeEditingTests {
             deleteMealRecord: DeleteMealRecordUseCase(
                 mealRepository: meals, dishRepository: dishes, imageStorage: storage
             ),
-            editRecipe: EditRecipeUseCase(dishRepository: dishes)
+            editRecipe: EditRecipeUseCase(dishRepository: dishes, imageStorage: InMemoryImageStorage()),
+            removeDishFromMeal: RemoveDishFromMealUseCase(mealRepository: meals, dishRepository: dishes)
         )
     }
 
@@ -214,5 +215,109 @@ struct DishRecipeDraftTests {
         draft.apply(Recipe(dishID: dishID, links: [link]))
 
         #expect(draft.links == [link])
+    }
+}
+
+/// 保存ボタン 1 つで何が残るかを確かめる。
+@MainActor
+struct MealDetailSaveAllTests {
+    private func make(
+        mealID: UUID,
+        meals: InMemoryMealRecordRepository,
+        dishes: InMemoryDishRepository = InMemoryDishRepository()
+    ) -> MealDetailViewModel {
+        MealDetailViewModel(
+            mealID: mealID,
+            getMealDetail: GetMealDetailUseCase(mealRepository: meals, dishRepository: dishes),
+            updateMealRecord: UpdateMealRecordUseCase(mealRepository: meals, dishRepository: dishes),
+            assignDishToMeal: AssignDishToMealUseCase(mealRepository: meals, dishRepository: dishes),
+            deleteMealRecord: DeleteMealRecordUseCase(
+                mealRepository: meals, dishRepository: dishes, imageStorage: InMemoryImageStorage()
+            ),
+            editRecipe: EditRecipeUseCase(
+                dishRepository: dishes, imageStorage: InMemoryImageStorage()
+            ),
+            removeDishFromMeal: RemoveDishFromMealUseCase(
+                mealRepository: meals, dishRepository: dishes
+            )
+        )
+    }
+
+    @Test func メモと複数のレシピをまとめて保存できる() async throws {
+        let meals = InMemoryMealRecordRepository()
+        let dishes = InMemoryDishRepository()
+        let meal = MealRecord(occurredAt: Date())
+        try await meals.save(meal)
+        let viewModel = make(mealID: meal.id, meals: meals, dishes: dishes)
+        await viewModel.load()
+
+        viewModel.dishNameDraft = "唐揚げ"
+        await viewModel.addDish()
+        let first = try #require(viewModel.detail?.dishes.first?.dish.id)
+        viewModel.recipeDraft(for: first).ingredients = "鶏もも肉"
+
+        viewModel.dishNameDraft = "サラダ"
+        await viewModel.addDish()
+        let second = try #require(viewModel.detail?.dishes.map(\.dish.id).first { $0 != first })
+        viewModel.recipeDraft(for: second).ingredients = "レタス"
+
+        viewModel.noteDraft = "美味しかった"
+        await viewModel.saveAll()
+
+        #expect(try await meals.find(id: meal.id)?.note == "美味しかった")
+        #expect(try await dishes.findRecipe(dishID: first)?.ingredients == "鶏もも肉")
+        #expect(try await dishes.findRecipe(dishID: second)?.ingredients == "レタス")
+    }
+
+    @Test func 保存すると未保存の印が消える() async throws {
+        let meals = InMemoryMealRecordRepository()
+        let meal = MealRecord(occurredAt: Date())
+        try await meals.save(meal)
+        let viewModel = make(mealID: meal.id, meals: meals)
+        await viewModel.load()
+
+        viewModel.dishNameDraft = "唐揚げ"
+        await viewModel.addDish()
+        let dishID = try #require(viewModel.detail?.dishes.first?.dish.id)
+        viewModel.recipeDraft(for: dishID).ingredients = "鶏もも肉"
+        #expect(viewModel.hasUnsavedChanges)
+
+        await viewModel.saveAll()
+
+        #expect(!viewModel.hasUnsavedChanges)
+    }
+
+    /// 開いただけの料理は保存の対象にしない。書いていないのに更新日時が動くため。
+    @Test func 触っていない料理は保存されない() async throws {
+        let meals = InMemoryMealRecordRepository()
+        let dishes = InMemoryDishRepository()
+        let meal = MealRecord(occurredAt: Date())
+        try await meals.save(meal)
+        let viewModel = make(mealID: meal.id, meals: meals, dishes: dishes)
+        await viewModel.load()
+
+        viewModel.dishNameDraft = "唐揚げ"
+        await viewModel.addDish()
+        let dishID = try #require(viewModel.detail?.dishes.first?.dish.id)
+
+        await viewModel.saveAll()
+
+        #expect(try await dishes.findRecipe(dishID: dishID) == nil)
+    }
+
+    @Test func 料理を外せる() async throws {
+        let meals = InMemoryMealRecordRepository()
+        let meal = MealRecord(occurredAt: Date())
+        try await meals.save(meal)
+        let viewModel = make(mealID: meal.id, meals: meals)
+        await viewModel.load()
+        viewModel.dishNameDraft = "唐揚げ"
+        await viewModel.addDish()
+        let entry = try #require(viewModel.detail?.dishes.first)
+
+        await viewModel.removeDish(entry: entry)
+
+        #expect(viewModel.detail?.dishes.isEmpty == true)
+        #expect(viewModel.expandedDishID == nil)
     }
 }

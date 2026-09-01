@@ -18,6 +18,7 @@ extension RecipeModel {
             ingredients: ingredients,
             steps: steps,
             links: Self.decodeLinks(linksJSON),
+            photoIDs: Self.decodeIDs(photoIDsJSON),
             createdAt: createdAt,
             updatedAt: updatedAt
         )
@@ -27,6 +28,7 @@ extension RecipeModel {
         ingredients = recipe.ingredients
         steps = recipe.steps
         linksJSON = Self.encodeLinks(recipe.links)
+        photoIDsJSON = Self.encodeIDs(recipe.photoIDs)
         updatedAt = recipe.updatedAt
     }
 
@@ -37,6 +39,7 @@ extension RecipeModel {
             ingredients: recipe.ingredients,
             steps: recipe.steps,
             linksJSON: Self.encodeLinks(recipe.links),
+            photoIDsJSON: Self.encodeIDs(recipe.photoIDs),
             createdAt: recipe.createdAt,
             updatedAt: recipe.updatedAt
         )
@@ -48,6 +51,19 @@ extension RecipeModel {
             return []
         }
         return stored.compactMap { RecipeLink(id: $0.id, rawURL: $0.url, title: $0.title) }
+    }
+
+    static func decodeIDs(_ json: String?) -> [UUID] {
+        guard let json, let data = json.data(using: .utf8),
+              let ids = try? JSONDecoder().decode([UUID].self, from: data) else {
+            return []
+        }
+        return ids
+    }
+
+    static func encodeIDs(_ ids: [UUID]) -> String? {
+        guard !ids.isEmpty, let data = try? JSONEncoder().encode(ids) else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     static func encodeLinks(_ links: [RecipeLink]) -> String? {

@@ -5,7 +5,7 @@ import Testing
 struct EditRecipeUseCaseTests {
     private func make() -> (EditRecipeUseCase, InMemoryDishRepository) {
         let dishes = InMemoryDishRepository()
-        return (EditRecipeUseCase(dishRepository: dishes), dishes)
+        return (EditRecipeUseCase(dishRepository: dishes, imageStorage: InMemoryImageStorage()), dishes)
     }
 
     /// 未作成でも空のレシピを返す。画面側で分岐させないため。
