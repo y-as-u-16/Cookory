@@ -26,8 +26,11 @@ struct PhotoThumbnailView: View {
     }
 
     private func load() async {
-        guard let photoID, let storage = dependencies?.imageStorage else { return }
-        guard let data = try? await storage.loadThumbnail(id: photoID) else { return }
-        image = UIImage(data: data)
+        guard let photoID, let storage = dependencies?.imageStorage else {
+            image = nil
+            return
+        }
+        // 失敗時は nil に戻す。前の写真が残ると別の記録の画像を見せてしまう。
+        image = (try? await storage.loadThumbnail(id: photoID)).flatMap { UIImage(data: $0) }
     }
 }
