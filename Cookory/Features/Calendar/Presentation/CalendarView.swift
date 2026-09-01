@@ -40,16 +40,21 @@ struct CalendarView: View {
         .navigationTitle(Text(L10n.calendarTitle))
         // 詳細画面で削除して戻ったときに反映させるため、表示のたびに取り直す。
         .onAppear { Task { await viewModel.reload() } }
-        .confirmationDialog(
+        // confirmationDialog だと iPhone でもリスト先頭を起点に吹き出してしまう。
+        // alert は位置を持たないため、どの行から消しても同じ見え方になる。
+        .alert(
             Text(L10n.mealDetailDeleteConfirm),
             isPresented: $isConfirmingDelete,
-            titleVisibility: .visible
-        ) {
+            presenting: pendingDeletion
+        ) { mealID in
+            Button(String(localized: L10n.commonCancel), role: .cancel) {
+                pendingDeletion = nil
+            }
             Button(String(localized: L10n.mealDetailDelete), role: .destructive) {
-                guard let mealID = pendingDeletion else { return }
+                pendingDeletion = nil
                 Task { await viewModel.delete(mealID: mealID) }
             }
-        } message: {
+        } message: { _ in
             Text(L10n.mealDetailDeleteMessage)
         }
     }
@@ -111,10 +116,11 @@ struct CalendarView: View {
                     ForEach(viewModel.selectedDayMeals) { meal in
                         Button { onSelectMeal(meal.id) } label: {
                             MealRowView(meal: meal)
+                                .padding(.vertical, 4)
                         }
                         .buttonStyle(.plain)
-                        .swipeActions(edge: .trailing) {
-                            // 記録は写真ごと消える。取り消せないので確認を挟む。
+                        // 端まで払っただけで消えると事故になる。確認を必ず通す。
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 pendingDeletion = meal.id
                                 isConfirmingDelete = true

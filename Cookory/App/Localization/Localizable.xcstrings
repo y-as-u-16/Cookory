@@ -1648,6 +1648,22 @@
           }
         }
       }
+    },
+    "common.button.cancel": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャンセル"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

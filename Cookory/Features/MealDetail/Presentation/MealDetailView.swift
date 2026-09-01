@@ -28,9 +28,10 @@ struct MealDetailView: View {
         .navigationTitle(Text(L10n.mealDetailTitle))
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.load() }
-        .confirmationDialog(
-            Text(L10n.mealDetailDeleteConfirm), isPresented: $isConfirmingDelete, titleVisibility: .visible
+        .alert(
+            Text(L10n.mealDetailDeleteConfirm), isPresented: $isConfirmingDelete
         ) {
+            Button(String(localized: L10n.commonCancel), role: .cancel) {}
             Button(String(localized: L10n.mealDetailDelete), role: .destructive) {
                 Task { if await viewModel.deleteMeal() { onDeleted() } }
             }
