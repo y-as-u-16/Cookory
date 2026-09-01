@@ -148,6 +148,7 @@ enum L10n {
     static var themeDark: LocalizedStringResource { t("settings.theme.dark") }
 
     // 共通
+    static var commonCancel: LocalizedStringResource { t("common.button.cancel") }
     static var errorGeneric: LocalizedStringResource { t("error.generic") }
     static var errorLoad: LocalizedStringResource { t("error.load") }
     static var errorSave: LocalizedStringResource { t("error.save") }
