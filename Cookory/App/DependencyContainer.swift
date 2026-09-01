@@ -87,7 +87,7 @@ extension DependencyContainer {
     }
 
     var editRecipe: EditRecipeUseCase {
-        EditRecipeUseCase(dishRepository: dishRepository)
+        EditRecipeUseCase(dishRepository: dishRepository, imageStorage: imageStorage)
     }
 
     var getDishHistory: GetDishHistoryUseCase {
@@ -100,6 +100,10 @@ extension DependencyContainer {
 
     var assignDishToMeal: AssignDishToMealUseCase {
         AssignDishToMealUseCase(mealRepository: mealRepository, dishRepository: dishRepository)
+    }
+
+    var removeDishFromMeal: RemoveDishFromMealUseCase {
+        RemoveDishFromMealUseCase(mealRepository: mealRepository, dishRepository: dishRepository)
     }
 
     var updateMealRecord: UpdateMealRecordUseCase {

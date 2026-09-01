@@ -68,7 +68,6 @@ enum L10n {
     static var mealDetailAddDish: LocalizedStringResource { t("mealDetail.field.addDish") }
     static var mealDetailAdd: LocalizedStringResource { t("mealDetail.button.add") }
     static var mealDetailNoteSection: LocalizedStringResource { t("mealDetail.section.note") }
-    static var mealDetailMealType: LocalizedStringResource { t("mealDetail.field.mealType") }
     static var mealDetailNote: LocalizedStringResource { t("mealDetail.field.note") }
     static var mealDetailSave: LocalizedStringResource { t("mealDetail.button.save") }
     static var mealDetailDelete: LocalizedStringResource { t("mealDetail.button.delete") }
@@ -76,6 +75,9 @@ enum L10n {
     static var mealDetailDeleteMessage: LocalizedStringResource { t("mealDetail.delete.message") }
     static var mealDetailDishHint: LocalizedStringResource { t("mealDetail.dishes.hint") }
     static var mealDetailOpenDish: LocalizedStringResource { t("mealDetail.button.openDish") }
+    static var mealDetailRemoveDish: LocalizedStringResource { t("mealDetail.button.removeDish") }
+    static var mealDetailRecipeFilled: LocalizedStringResource { t("mealDetail.recipe.filled") }
+    static var mealDetailUnsavedHint: LocalizedStringResource { t("mealDetail.unsaved.hint") }
 
     // 食事の種類
     static var mealTypeUnspecified: LocalizedStringResource { t("mealType.unspecified") }
@@ -119,9 +121,20 @@ enum L10n {
     static var recipeLinks: LocalizedStringResource { t("recipe.section.links") }
     static var recipeAddLink: LocalizedStringResource { t("recipe.button.addLink") }
     static var recipeLinkName: LocalizedStringResource { t("recipe.field.linkName") }
+    static var recipeLinkURL: LocalizedStringResource { t("recipe.field.linkURL") }
+    static var recipePhotos: LocalizedStringResource { t("recipe.section.photos") }
+    static var recipePhotoAdd: LocalizedStringResource { t("recipe.button.addPhoto") }
+    static var recipePhotoRemove: LocalizedStringResource { t("recipe.button.removePhoto") }
+    static var recipeIngredientsExample: LocalizedStringResource { t("recipe.example.ingredients") }
+    static var recipeStepsExample: LocalizedStringResource { t("recipe.example.steps") }
+
+    // アクセシビリティ
+    static var a11yExpandRecipe: LocalizedStringResource { t("a11y.recipe.expand") }
+    static var a11yCollapseRecipe: LocalizedStringResource { t("a11y.recipe.collapse") }
+    static func a11yPhotoIndex(_ index: Int, _ total: Int) -> LocalizedStringResource {
+        t("a11y.photo.index \(index) \(total)")
+    }
     static var recipeSave: LocalizedStringResource { t("recipe.button.save") }
-    static var recipeIngredientsPlaceholder: LocalizedStringResource { t("recipe.placeholder.ingredients") }
-    static var recipeStepsPlaceholder: LocalizedStringResource { t("recipe.placeholder.steps") }
 
     // 検索
     static var searchTitle: LocalizedStringResource { t("search.title") }
@@ -149,6 +162,7 @@ enum L10n {
 
     // 共通
     static var commonCancel: LocalizedStringResource { t("common.button.cancel") }
+    static var commonDone: LocalizedStringResource { t("common.button.done") }
     static var errorGeneric: LocalizedStringResource { t("error.generic") }
     static var errorLoad: LocalizedStringResource { t("error.load") }
     static var errorSave: LocalizedStringResource { t("error.save") }

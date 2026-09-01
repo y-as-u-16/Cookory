@@ -137,7 +137,8 @@ private struct TabStack: View {
                     updateMealRecord: container.updateMealRecord,
                     assignDishToMeal: container.assignDishToMeal,
                     deleteMealRecord: container.deleteMealRecord,
-                    editRecipe: container.editRecipe
+                    editRecipe: container.editRecipe,
+                    removeDishFromMeal: container.removeDishFromMeal
                 ),
                 onSelectDish: { router.push(.dishDetail($0)) },
                 onDeleted: { router.pop() }

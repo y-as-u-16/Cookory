@@ -29,6 +29,7 @@ final class MealDetailViewModel {
     private let assignDishToMeal: AssignDishToMealUseCase
     private let deleteMealRecord: DeleteMealRecordUseCase
     private let editRecipe: EditRecipeUseCase
+    private let removeDishFromMeal: RemoveDishFromMealUseCase
 
     init(
         mealID: UUID,
@@ -36,7 +37,8 @@ final class MealDetailViewModel {
         updateMealRecord: UpdateMealRecordUseCase,
         assignDishToMeal: AssignDishToMealUseCase,
         deleteMealRecord: DeleteMealRecordUseCase,
-        editRecipe: EditRecipeUseCase
+        editRecipe: EditRecipeUseCase,
+        removeDishFromMeal: RemoveDishFromMealUseCase
     ) {
         self.mealID = mealID
         self.getMealDetail = getMealDetail
@@ -44,6 +46,7 @@ final class MealDetailViewModel {
         self.assignDishToMeal = assignDishToMeal
         self.deleteMealRecord = deleteMealRecord
         self.editRecipe = editRecipe
+        self.removeDishFromMeal = removeDishFromMeal
     }
 
     var detail: MealDetail? {
@@ -56,6 +59,11 @@ final class MealDetailViewModel {
 
     var canAddDish: Bool {
         DishName(dishNameDraft) != nil
+    }
+
+    /// 保存されていない変更があるか。保存ボタンの有効・無効に使う。
+    var hasUnsavedChanges: Bool {
+        noteDraft != (detail?.meal.note ?? "") || recipeDrafts.values.contains { $0.isDirty }
     }
 
     func load() async {
@@ -72,12 +80,23 @@ final class MealDetailViewModel {
         }
     }
 
-    /// 食事の種類とメモを保存する。
-    func saveMeal() async {
+    /// メモと、書きかけのレシピをまとめて保存する。
+    ///
+    /// 保存ボタンを 1 つに絞る。料理ごとにボタンがあると、どれを押せば
+    /// 何が残るのかが読み取れない。
+    func saveAll() async {
         do {
             try await updateMealRecord.updateMeal(
                 id: mealID, mealType: mealTypeDraft, note: noteDraft
             )
+            // 開いただけの料理まで保存すると、書いていないのに更新日時が動く。
+            for dishID in recipeDrafts.keys where recipeDraft(for: dishID).isDirty {
+                let draft = recipeDraft(for: dishID)
+                draft.apply(try await editRecipe.updateContent(
+                    dishID: dishID, ingredients: draft.ingredients, steps: draft.steps
+                ))
+            }
+            errorMessage = nil
             await load()
         } catch {
             errorMessage = L10n.errorSave
@@ -100,6 +119,19 @@ final class MealDetailViewModel {
             errorMessage = nil
             await load()
             await expand(dishID: log.dishID)
+        } catch {
+            errorMessage = L10n.errorGeneric
+        }
+    }
+
+    /// 記録から料理を外す。打ち間違えたときに記録ごと消さずに済ませる。
+    func removeDish(entry: MealDishEntry) async {
+        do {
+            try await removeDishFromMeal.execute(mealRecordID: mealID, dishLogID: entry.log.id)
+            recipeDrafts.removeValue(forKey: entry.dish.id)
+            if expandedDishID == entry.dish.id { expandedDishID = nil }
+            errorMessage = nil
+            await load()
         } catch {
             errorMessage = L10n.errorGeneric
         }
@@ -166,6 +198,30 @@ final class MealDetailViewModel {
         } catch DomainError.invalidInput {
             // Domain の文言は利用者向けではない。表示は Presentation で決める。
             errorMessage = L10n.errorInvalidLink
+        } catch {
+            errorMessage = L10n.errorGeneric
+        }
+    }
+
+    /// レシピにスクリーンショットを貼る。
+    func addRecipePhotos(dishID: UUID, images: [Data]) async {
+        guard !images.isEmpty else { return }
+        do {
+            recipeDraft(for: dishID).apply(
+                try await editRecipe.addPhotos(dishID: dishID, images: images)
+            )
+            errorMessage = nil
+        } catch {
+            errorMessage = L10n.errorImageStorage
+        }
+    }
+
+    func removeRecipePhoto(dishID: UUID, photoID: UUID) async {
+        do {
+            recipeDraft(for: dishID).apply(
+                try await editRecipe.removePhoto(dishID: dishID, photoID: photoID)
+            )
+            errorMessage = nil
         } catch {
             errorMessage = L10n.errorGeneric
         }

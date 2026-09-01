@@ -20,6 +20,10 @@ struct Recipe: Identifiable, Hashable, Sendable {
     /// 参考にした動画やページ。
     private(set) var links: [RecipeLink]
 
+    /// 貼り付けたスクリーンショット。Web やアプリで見つけたレシピを
+    /// 文字に起こし直さず、リンク切れにも備えて残せるようにする。
+    private(set) var photoIDs: [UUID]
+
     let createdAt: Date
     private(set) var updatedAt: Date
 
@@ -29,6 +33,7 @@ struct Recipe: Identifiable, Hashable, Sendable {
         ingredients: String? = nil,
         steps: String? = nil,
         links: [RecipeLink] = [],
+        photoIDs: [UUID] = [],
         createdAt: Date = Date(),
         updatedAt: Date? = nil
     ) {
@@ -37,13 +42,14 @@ struct Recipe: Identifiable, Hashable, Sendable {
         self.ingredients = ingredients?.normalizedOrNil
         self.steps = steps?.normalizedOrNil
         self.links = links
+        self.photoIDs = photoIDs
         self.createdAt = createdAt
         self.updatedAt = updatedAt ?? createdAt
     }
 
     /// 何も書かれていない状態。空のレシピを保存し続けないための判定に使う。
     var isEmpty: Bool {
-        ingredients == nil && steps == nil && links.isEmpty
+        ingredients == nil && steps == nil && links.isEmpty && photoIDs.isEmpty
     }
 
     func edited(ingredients: String?, steps: String?, at date: Date = Date()) -> Recipe {
@@ -66,6 +72,23 @@ struct Recipe: Identifiable, Hashable, Sendable {
         guard links.contains(where: { $0.id == linkID }) else { return self }
         var copy = self
         copy.links.removeAll { $0.id == linkID }
+        copy.updatedAt = date
+        return copy
+    }
+
+    func addingPhotos(_ ids: [UUID], at date: Date = Date()) -> Recipe {
+        let additions = ids.filter { !photoIDs.contains($0) }
+        guard !additions.isEmpty else { return self }
+        var copy = self
+        copy.photoIDs.append(contentsOf: additions)
+        copy.updatedAt = date
+        return copy
+    }
+
+    func removingPhoto(id photoID: UUID, at date: Date = Date()) -> Recipe {
+        guard photoIDs.contains(photoID) else { return self }
+        var copy = self
+        copy.photoIDs.removeAll { $0 == photoID }
         copy.updatedAt = date
         return copy
     }

@@ -7,6 +7,7 @@ import SwiftUI
 struct MealDetailView: View {
     @State private var viewModel: MealDetailViewModel
     @State private var isConfirmingDelete = false
+    @FocusState private var isEditingText: Bool
 
     private let onSelectDish: (UUID) -> Void
     private let onDeleted: () -> Void
@@ -28,6 +29,13 @@ struct MealDetailView: View {
         .navigationTitle(Text(L10n.mealDetailTitle))
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.load() }
+        .toolbar {
+            // 複数行入力では改行が入力になる。閉じる手段がないと入力が詰まる。
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button(String(localized: L10n.commonDone)) { isEditingText = false }
+            }
+        }
         .alert(
             Text(L10n.mealDetailDeleteConfirm), isPresented: $isConfirmingDelete
         ) {
@@ -51,12 +59,20 @@ struct MealDetailView: View {
             photoSection(detail)
             dishSection(detail)
             noteSection(detail)
+
             if let message = viewModel.errorMessage {
-                Section { Text(message).font(.footnote).foregroundStyle(.red) }
+                Section {
+                    // 色だけで異常を示さない。アイコンを添える。
+                    Label { Text(message) } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                }
             }
-            Section {
-                Button(String(localized: L10n.mealDetailDelete), role: .destructive) { isConfirmingDelete = true }
-            }
+
+            saveSection
+            deleteSection
         }
     }
 
@@ -64,10 +80,13 @@ struct MealDetailView: View {
         Section {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(detail.meal.photoIDs, id: \.self) { photoID in
+                    ForEach(Array(detail.meal.photoIDs.enumerated()), id: \.element) { index, photoID in
                         PhotoImageView(photoID: photoID, size: .hero)
                             .frame(width: 160, height: 160)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .accessibilityLabel(
+                                Text(L10n.a11yPhotoIndex(index + 1, detail.meal.photoIDs.count))
+                            )
                     }
                 }
                 .padding(.vertical, 4)
@@ -84,11 +103,9 @@ struct MealDetailView: View {
                     entry: entry,
                     isExpanded: viewModel.isExpanded(dishID: entry.dish.id),
                     draft: viewModel.recipeDraft(for: entry.dish.id),
+                    isEditingText: $isEditingText,
                     onToggle: {
                         Task { await viewModel.toggleExpansion(dishID: entry.dish.id) }
-                    },
-                    onSaveRecipe: {
-                        Task { await viewModel.saveRecipe(dishID: entry.dish.id) }
                     },
                     onAddLink: {
                         Task { await viewModel.addLink(dishID: entry.dish.id) }
@@ -96,13 +113,28 @@ struct MealDetailView: View {
                     onRemoveLink: { linkID in
                         Task { await viewModel.removeLink(dishID: entry.dish.id, linkID: linkID) }
                     },
+                    onAddPhotos: { images in
+                        Task { await viewModel.addRecipePhotos(dishID: entry.dish.id, images: images) }
+                    },
+                    onRemovePhoto: { photoID in
+                        Task { await viewModel.removeRecipePhoto(dishID: entry.dish.id, photoID: photoID) }
+                    },
                     onOpenHistory: { onSelectDish(entry.dish.id) }
                 )
+                // 打ち間違えた料理を、記録ごと消さずに外せるようにする。
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        Task { await viewModel.removeDish(entry: entry) }
+                    } label: {
+                        Label(L10n.mealDetailRemoveDish, systemImage: "minus.circle")
+                    }
+                }
             }
 
             HStack {
                 TextField(String(localized: L10n.mealDetailAddDish), text: $viewModel.dishNameDraft)
                     .submitLabel(.done)
+                    .focused($isEditingText)
                     .onSubmit { Task { await viewModel.addDish() } }
                 Button(String(localized: L10n.mealDetailAdd)) {
                     Task { await viewModel.addDish() }
@@ -120,31 +152,38 @@ struct MealDetailView: View {
 
     private func noteSection(_ detail: MealDetail) -> some View {
         Section(String(localized: L10n.mealDetailNoteSection)) {
-            Picker(String(localized: L10n.mealDetailMealType), selection: $viewModel.mealTypeDraft) {
-                Text(L10n.mealTypeUnspecified).tag(MealType?.none)
-                ForEach(MealType.allCases, id: \.self) { type in
-                    Text(type.displayName).tag(MealType?.some(type))
-                }
-            }
-
             TextField(String(localized: L10n.mealDetailNote), text: $viewModel.noteDraft, axis: .vertical)
                 .lineLimit(3...8)
+                .focused($isEditingText)
+        }
+    }
 
-            Button(String(localized: L10n.mealDetailSave)) {
-                Task { await viewModel.saveMeal() }
+    private var saveSection: some View {
+        Section {
+            Button {
+                isEditingText = false
+                Task { await viewModel.saveAll() }
+            } label: {
+                Text(L10n.mealDetailSave)
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!viewModel.hasUnsavedChanges)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        } footer: {
+            if viewModel.hasUnsavedChanges {
+                Text(L10n.mealDetailUnsavedHint)
             }
         }
     }
-}
 
-extension MealType {
-    /// 表示名は Presentation の責務。Domain 側には持たせない。
-    var displayName: LocalizedStringResource {
-        switch self {
-        case .breakfast: L10n.mealTypeBreakfast
-        case .lunch: L10n.mealTypeLunch
-        case .dinner: L10n.mealTypeDinner
-        case .snack: L10n.mealTypeSnack
+    private var deleteSection: some View {
+        Section {
+            Button(String(localized: L10n.mealDetailDelete), role: .destructive) {
+                isConfirmingDelete = true
+            }
         }
     }
 }

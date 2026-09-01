@@ -7,7 +7,7 @@ struct RecipeEditorViewModelTests {
     private func make(
         dishID: UUID, dishes: InMemoryDishRepository = InMemoryDishRepository()
     ) -> RecipeEditorViewModel {
-        RecipeEditorViewModel(dishID: dishID, editRecipe: EditRecipeUseCase(dishRepository: dishes))
+        RecipeEditorViewModel(dishID: dishID, editRecipe: EditRecipeUseCase(dishRepository: dishes, imageStorage: InMemoryImageStorage()))
     }
 
     @Test func 保存済みのレシピを読み込める() async throws {
