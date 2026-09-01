@@ -89,6 +89,8 @@ enum L10n {
     // カレンダー
     static var calendarTitle: LocalizedStringResource { t("calendar.title") }
     static var calendarNoRecord: LocalizedStringResource { t("calendar.empty") }
+    static var calendarPreviousMonth: LocalizedStringResource { t("calendar.a11y.previousMonth") }
+    static var calendarNextMonth: LocalizedStringResource { t("calendar.a11y.nextMonth") }
 
     // 図鑑
     static var cookbookTitle: LocalizedStringResource { t("cookbook.title") }

@@ -21,7 +21,6 @@ struct CalendarView: View {
         List {
             Section {
                 VStack(spacing: 20) {
-                    monthHeader
                     weekdayHeader
                     grid
                     if let message = viewModel.errorMessage {
@@ -38,6 +37,9 @@ struct CalendarView: View {
         }
         .listStyle(.plain)
         .navigationTitle(Text(L10n.calendarTitle))
+        .navigationBarTitleDisplayMode(.inline)
+        // List の行に置くと、行タップがボタンを吸収して個別に反応しない。
+        .toolbar { monthNavigation }
         // 詳細画面で削除して戻ったときに反映させるため、表示のたびに取り直す。
         .onAppear { Task { await viewModel.reload() } }
         // confirmationDialog だと iPhone でもリスト先頭を起点に吹き出してしまう。
@@ -59,18 +61,25 @@ struct CalendarView: View {
         }
     }
 
-    private var monthHeader: some View {
-        HStack {
+    @ToolbarContentBuilder
+    private var monthNavigation: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
             Button { Task { await viewModel.showPreviousMonth() } } label: {
                 Image(systemName: "chevron.left")
             }
-            Spacer()
+            .accessibilityLabel(Text(L10n.calendarPreviousMonth))
+        }
+
+        ToolbarItem(placement: .principal) {
             Text(viewModel.displayedMonth, format: .dateTime.year().month(.wide))
                 .font(.headline)
-            Spacer()
+        }
+
+        ToolbarItem(placement: .topBarTrailing) {
             Button { Task { await viewModel.showNextMonth() } } label: {
                 Image(systemName: "chevron.right")
             }
+            .accessibilityLabel(Text(L10n.calendarNextMonth))
         }
     }
 
