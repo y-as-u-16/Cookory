@@ -5,9 +5,10 @@ import SwiftUI
 ///
 /// 選択した時点で保存する。確認ボタンを挟まないのは
 /// 「Record Now, Organize Later」の実装（APP_DESIGN.md #4.3）。
+/// 保存できたら料理名とレシピの入力画面へそのまま進む。
 struct CaptureView: View {
-    /// 1 回の食卓で選べる枚数の上限。画像の保存が直列なため、
-    /// 多すぎると待ち時間が体感できるほど伸びる。
+    /// 1 回の食卓で扱える枚数の上限。撮影と選択で揃える。
+    /// 画像の保存が直列なため、多すぎると待ち時間が体感できるほど伸びる。
     static let photoLimit = 10
 
     @State private var viewModel: CaptureViewModel
@@ -32,12 +33,24 @@ struct CaptureView: View {
             guard !items.isEmpty else { return }
             Task { await load(items) }
         }
+        // 保存が終わったら入力画面へ送る。確認画面を挟むと
+        // 「あとで書く」が既定になり、料理名が付かない記録が溜まる。
+        .onChange(of: viewModel.savedRecord?.id) { _, id in
+            guard let id else { return }
+            selection = []
+            viewModel.reset()
+            onSaved(id)
+        }
         .fullScreenCover(isPresented: $isShowingCamera) {
-            CameraPicker { data in
-                isShowingCamera = false
-                guard let data else { return }
-                Task { await viewModel.save(images: [data]) }
-            }
+            MultiPhotoCameraView(
+                limit: Self.photoLimit,
+                onFinish: { images in
+                    isShowingCamera = false
+                    guard !images.isEmpty else { return }
+                    Task { await viewModel.save(images: images) }
+                },
+                onCancel: { isShowingCamera = false }
+            )
             .ignoresSafeArea()
         }
     }
@@ -45,16 +58,10 @@ struct CaptureView: View {
     @ViewBuilder
     private var content: some View {
         switch viewModel.state {
-        case .idle:
+        case .idle, .saved:
             picker
         case .saving:
             ProgressView { Text(L10n.captureSaving) }
-        case .saved(let meal):
-            SavedConfirmationView(
-                photoCount: meal.photoIDs.count,
-                onAddDetails: { onSaved(meal.id) },
-                onDone: reset
-            )
         case .failed(let message):
             FailureView(message: message, onRetry: reset)
         }
@@ -63,7 +70,7 @@ struct CaptureView: View {
     private var picker: some View {
         VStack(spacing: 12) {
             // シミュレータではカメラが無いため出さない。
-            if CameraPicker.isAvailable {
+            if CameraSession.isAvailable {
                 Button {
                     isShowingCamera = true
                 } label: {
@@ -108,7 +115,6 @@ struct CaptureView: View {
         }
 
         await viewModel.save(images: images)
-        selection = []
     }
 
     private func reset() {

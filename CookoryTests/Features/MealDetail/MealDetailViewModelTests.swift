@@ -23,7 +23,8 @@ struct MealDetailViewModelTests {
             ),
             deleteMealRecord: DeleteMealRecordUseCase(
                 mealRepository: meals, dishRepository: dishes, imageStorage: storage
-            )
+            ),
+            editRecipe: EditRecipeUseCase(dishRepository: dishes)
         )
     }
 

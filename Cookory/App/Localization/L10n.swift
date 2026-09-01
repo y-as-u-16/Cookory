@@ -44,15 +44,21 @@ enum L10n {
     static var captureTakePhoto: LocalizedStringResource { t("capture.button.camera") }
     static var captureChoosePhoto: LocalizedStringResource { t("capture.button.library") }
     static var captureSaving: LocalizedStringResource { t("capture.saving") }
-    static var captureAddDetails: LocalizedStringResource { t("capture.button.addDetails") }
-    static var captureContinue: LocalizedStringResource { t("capture.button.continue") }
     static var captureFailedTitle: LocalizedStringResource { t("capture.failed.title") }
     static var captureRetry: LocalizedStringResource { t("capture.button.retry") }
     static func capturePhotoLimit(_ limit: Int) -> LocalizedStringResource {
         t("capture.photoLimit \(limit)")
     }
-    static func captureSavedCount(_ count: Int) -> LocalizedStringResource {
-        t("capture.saved \(count)")
+
+    // カメラ
+    static var cameraShutter: LocalizedStringResource { t("camera.button.shutter") }
+    static var cameraDone: LocalizedStringResource { t("camera.button.done") }
+    static var cameraCancel: LocalizedStringResource { t("camera.button.cancel") }
+    static var cameraUndo: LocalizedStringResource { t("camera.button.undo") }
+    static var cameraUnavailable: LocalizedStringResource { t("camera.unavailable") }
+    static var cameraPermissionDenied: LocalizedStringResource { t("camera.permission.denied") }
+    static func cameraCount(_ taken: Int, _ limit: Int) -> LocalizedStringResource {
+        t("camera.count \(taken) \(limit)")
     }
 
     // 記録の詳細
@@ -67,6 +73,8 @@ enum L10n {
     static var mealDetailDelete: LocalizedStringResource { t("mealDetail.button.delete") }
     static var mealDetailDeleteConfirm: LocalizedStringResource { t("mealDetail.delete.confirm") }
     static var mealDetailDeleteMessage: LocalizedStringResource { t("mealDetail.delete.message") }
+    static var mealDetailDishHint: LocalizedStringResource { t("mealDetail.dishes.hint") }
+    static var mealDetailOpenDish: LocalizedStringResource { t("mealDetail.button.openDish") }
 
     // 食事の種類
     static var mealTypeUnspecified: LocalizedStringResource { t("mealType.unspecified") }
