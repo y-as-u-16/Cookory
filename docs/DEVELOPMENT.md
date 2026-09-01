@@ -314,30 +314,46 @@ Types: `feat` / `fix` / `refactor` / `docs` / `test` / `chore` / `perf` / `ci`
 
 ## 8b. Branch workflow / ブランチ運用
 
-`main` is protected: direct pushes are rejected, so every change goes through a
-pull request.
+Every change starts with an issue. Branches are cut from that issue, and `main`
+is protected: direct pushes are rejected, so every change goes through a pull
+request.
 
-`main` は保護されており直接 push できない。変更は必ず PR を経由する。
+**変更は必ず Issue から始める。** 新機能もバグ修正も、まず Issue を立て、それに
+紐づくブランチを切ってから作業する。`main` は保護されており直接 push できない。
 
 ```bash
-# 1. ブランチを切る
-git switch -c feat/capture-usecase
+# 1. Issue を立てる（新規開発でもバグ修正でも必ず）
+gh issue create --title "料理記録の保存機能を追加する" --body-file issue.md
 
-# 2. 作業してコミット
+# 2. Issue 番号を含むブランチを切る
+git switch -c feat/4-capture-usecase
+
+# 3. 作業してコミット
 git add -A && git commit -m "feat: 料理記録の保存機能を追加"
 
-# 3. push して PR を作る
-git push -u origin feat/capture-usecase
-gh pr create --body "Closes #4"   # 紐づく Issue があれば必ず書く
+# 4. push して PR を作る
+git push -u origin feat/4-capture-usecase
+gh pr create --body "Closes #4"   # Issue の紐づけは必須
 
-# 4. CI が緑になったらマージ（ブランチは同時に削除される）
+# 5. CI が緑になったらマージ（ブランチは同時に削除される）
 gh pr merge --squash --delete-branch
 
-# 5. ローカルを追従させる
+# 6. ローカルを追従させる
 git switch main && git pull
 ```
 
 `--delete-branch` を必ず付ける。放置するとブランチ一覧が使い物にならなくなる。
+
+### Why an issue first / なぜ先に Issue を立てるのか
+
+- **何をやるかを、コードを書く前に言葉にできる。** 着手してから要件が揺れると
+  差分が膨らみ、PR が読めなくなる
+- Issue 番号がブランチ名・PR・コミットを貫く一本の線になる。3か月後に
+  「なぜこの変更をしたのか」を辿れる
+- 作業前に完了条件を書いておくと、実装の途中で「どこまでやるか」を迷わない
+
+Issue には背景・やること・完了条件をチェックリストで書く。粒度は PR 1 本ぶん
+（[8c](#8c-pr-size--pr-の粒度) を参照）。
 
 ### Linking issues / Issue との紐づけ
 
@@ -364,12 +380,14 @@ Closes #4, #5            ← #4 しか閉じない
 
 コミットの type をそのまま接頭辞に使う。
 
+接頭辞に続けて Issue 番号を入れる。ブランチ名だけで出所が分かる。
+
 ```
-feat/dish-history       機能追加
-fix/thumbnail-rotation  バグ修正
-refactor/meal-repo      リファクタ
-docs/architecture       ドキュメント
-chore/ci-cache          雑務
+feat/12-dish-history       機能追加
+fix/18-thumbnail-rotation  バグ修正
+refactor/23-meal-repo      リファクタ
+docs/31-architecture       ドキュメント
+chore/35-ci-cache          雑務
 ```
 
 ### Why PRs for a solo project / 個人開発でも PR を通す理由
@@ -379,6 +397,31 @@ chore/ci-cache          雑務
 - 差分をまとめて見返せる。3か月後の自分にとっての記録になる
 
 管理者は保護をすり抜けて直接 push できるが、緊急時の逃げ道として残しているだけで、通常は使わない。
+
+## 8c. PR size / PR の粒度
+
+Issues stay small and specific. Pull requests do not: a push to `main` triggers
+a TestFlight upload, and Apple rate-limits those per day.
+
+**Issue は細かく立ててよいが、PR はまとめる。** `main` への push ごとに CD が
+TestFlight へ配信するため、PR 1 本がアップロード 1 回に相当する。
+
+2026-08-30 に Issue を 1 件ずつ PR にして 1 日で 13 回上げたところ、Apple の
+アップロード上限に当たり CD が 2 回失敗した。
+
+```
+ERROR ITMS-90382: Upload limit reached ... wait 1 day
+```
+
+同じ設定・同じ Fastfile の BaseMatch は同日 7 回で問題なかったので、設定の
+不備ではなく単純に回数の問題。CD のトリガー設定は正常に機能しているため
+変更しない。
+
+関連する Issue は 1 本の PR にまとめ、本文で個別に閉じる。
+
+```
+Closes #12, closes #13, closes #14
+```
 
 ## 9. Before publishing / 公開前の確認
 
