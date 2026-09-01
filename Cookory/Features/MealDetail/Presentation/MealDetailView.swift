@@ -1,6 +1,9 @@
 import SwiftUI
 
-/// 1 件の食事記録。写真を見て、料理名やメモを後から足す画面。
+/// 1 件の食事記録。写真・料理名・レシピ・メモをこの 1 画面で書き切る。
+///
+/// 記録直後にそのまま開く画面でもある。料理名とレシピを別画面に分けると
+/// 「あとで書こう」が積み上がるため、入力欄はすべてここに集める。
 struct MealDetailView: View {
     @State private var viewModel: MealDetailViewModel
     @State private var isConfirmingDelete = false
@@ -74,13 +77,26 @@ struct MealDetailView: View {
     }
 
     private func dishSection(_ detail: MealDetail) -> some View {
-        Section(String(localized: L10n.mealDetailDishesSection)) {
+        Section {
             ForEach(detail.dishes) { entry in
-                Button { onSelectDish(entry.dish.id) } label: {
-                    MealDishRowView(entry: entry)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                MealDishRowView(
+                    entry: entry,
+                    isExpanded: viewModel.isExpanded(dishID: entry.dish.id),
+                    draft: viewModel.recipeDraft(for: entry.dish.id),
+                    onToggle: {
+                        Task { await viewModel.toggleExpansion(dishID: entry.dish.id) }
+                    },
+                    onSaveRecipe: {
+                        Task { await viewModel.saveRecipe(dishID: entry.dish.id) }
+                    },
+                    onAddLink: {
+                        Task { await viewModel.addLink(dishID: entry.dish.id) }
+                    },
+                    onRemoveLink: { linkID in
+                        Task { await viewModel.removeLink(dishID: entry.dish.id, linkID: linkID) }
+                    },
+                    onOpenHistory: { onSelectDish(entry.dish.id) }
+                )
             }
 
             HStack {
@@ -91,6 +107,12 @@ struct MealDetailView: View {
                     Task { await viewModel.addDish() }
                 }
                 .disabled(!viewModel.canAddDish)
+            }
+        } header: {
+            Text(L10n.mealDetailDishesSection)
+        } footer: {
+            if detail.hasDishes {
+                Text(L10n.mealDetailDishHint)
             }
         }
     }
