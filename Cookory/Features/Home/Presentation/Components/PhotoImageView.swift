@@ -37,13 +37,16 @@ struct PhotoImageView: View {
             }
         }
         .clipped()
+        // onDisappear で解放すると、photoID が変わらない限り task が再実行されず、
+        // 画面に戻ってもプレースホルダのまま残る。解放は View の破棄に任せる。
         .task(id: photoID) { await load() }
-        // 画面外に出たら解放する。持ち続けると一覧をたどるほどメモリが増える。
-        .onDisappear { image = nil }
     }
 
     private func load() async {
-        guard let photoID, let storage = dependencies?.imageStorage else { return }
+        guard let photoID, let storage = dependencies?.imageStorage else {
+            image = nil
+            return
+        }
 
         let data: Data?
         switch size {
@@ -55,7 +58,7 @@ struct PhotoImageView: View {
             )
         }
 
-        guard let data else { return }
-        image = UIImage(data: data)
+        // 失敗時は nil に戻す。前の写真が残ると別の記録の画像を見せてしまう。
+        image = data.flatMap { UIImage(data: $0) }
     }
 }

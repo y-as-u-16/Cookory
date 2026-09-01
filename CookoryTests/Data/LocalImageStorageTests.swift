@@ -173,3 +173,88 @@ struct LocalImageStorageTests {
         #expect(first.id != second.id)
     }
 }
+
+/// 複数枚を並行に保存したあと、すべて読み出せることを確かめる。
+///
+/// 保存を並行化した際に、書き込み途中のファイルを読んだり
+/// 取りこぼしたりしていないかを見る。
+struct LocalImageStorageConcurrencyTests {
+    private func makeStorage() throws -> (LocalImageStorage, URL) {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("CookoryTests-\(UUID().uuidString)", isDirectory: true)
+        let storage = try LocalImageStorage(
+            originalsDirectory: root.appendingPathComponent("originals"),
+            thumbnailsDirectory: root.appendingPathComponent("thumbnails")
+        )
+        return (storage, root)
+    }
+
+    private func makeJPEG() throws -> Data {
+        let context = CGContext(
+            data: nil, width: 64, height: 64, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+        )!
+        context.setFillColor(CGColor(red: 0.2, green: 0.6, blue: 0.9, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
+        let image = context.makeImage()!
+
+        let output = NSMutableData()
+        let destination = CGImageDestinationCreateWithData(
+            output, UTType.jpeg.identifier as CFString, 1, nil
+        )!
+        CGImageDestinationAddImage(destination, image, nil)
+        #expect(CGImageDestinationFinalize(destination))
+        return output as Data
+    }
+
+    private func saveConcurrently(
+        _ storage: LocalImageStorage, image: Data, count: Int
+    ) async throws -> [PhotoAsset] {
+        try await withThrowingTaskGroup(of: PhotoAsset.self) { group in
+            for _ in 0..<count {
+                group.addTask { try await storage.save(image) }
+            }
+            var saved: [PhotoAsset] = []
+            for try await asset in group { saved.append(asset) }
+            return saved
+        }
+    }
+
+    @Test func 並行保存したすべての写真を読み出せる() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let assets = try await saveConcurrently(storage, image: try makeJPEG(), count: 10)
+
+        #expect(assets.count == 10)
+        for asset in assets {
+            #expect(try await !storage.load(id: asset.id).isEmpty)
+        }
+    }
+
+    /// 一覧はサムネイルで描画する。ここが読めないと写真が出ない。
+    @Test func 並行保存したすべてのサムネイルを読み出せる() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let assets = try await saveConcurrently(storage, image: try makeJPEG(), count: 10)
+
+        for asset in assets {
+            #expect(try await !storage.loadThumbnail(id: asset.id).isEmpty)
+        }
+    }
+
+    /// Caches は OS に破棄されうる。消えても原本から作り直せること。
+    @Test func サムネイルが消えても原本から作り直せる() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let asset = try await storage.save(try makeJPEG())
+        #expect(try await !storage.loadThumbnail(id: asset.id).isEmpty)
+
+        // OS による Caches の破棄を模す。
+        try FileManager.default.removeItem(at: root.appendingPathComponent("thumbnails"))
+
+        #expect(try await !storage.loadThumbnail(id: asset.id).isEmpty)
+    }
+}
