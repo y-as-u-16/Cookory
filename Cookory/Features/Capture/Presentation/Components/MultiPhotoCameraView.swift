@@ -61,7 +61,8 @@ struct MultiPhotoCameraView: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(.black.opacity(0.5), in: Capsule())
+            // 黒の半透明はプレビュー映像を潰す。Glass なら背景が透ける。
+            .glassEffect(.regular, in: .capsule)
             .padding()
     }
 
@@ -82,7 +83,8 @@ struct MultiPhotoCameraView: View {
             .padding(.horizontal, 24)
         }
         .padding(.vertical, 20)
-        .background(.black)
+        // 操作部は Functional Layer。黒ベタで塞がず映像の上に浮かせる。
+        .background(.ultraThinMaterial)
     }
 
     private var shutter: some View {
@@ -120,7 +122,7 @@ struct MultiPhotoCameraView: View {
                             .font(.caption)
                             .labelStyle(.iconOnly)
                             .frame(width: 56, height: 56)
-                            .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .glassEffect(.regular, in: .rect(cornerRadius: 8))
                             .foregroundStyle(.white)
                     }
                     .accessibilityLabel(Text(L10n.cameraUndo))

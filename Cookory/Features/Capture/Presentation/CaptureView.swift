@@ -79,7 +79,7 @@ struct CaptureView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
             }
 
             PhotosPicker(
@@ -94,7 +94,7 @@ struct CaptureView: View {
                     .padding(.vertical, 16)
             }
             // カメラがあるときは撮影を主役にし、選択は控えめにする。
-            .buttonStyle(.bordered)
+            .buttonStyle(.glass)
 
             Text(L10n.capturePhotoLimit(Self.photoLimit))
                 .font(.caption)

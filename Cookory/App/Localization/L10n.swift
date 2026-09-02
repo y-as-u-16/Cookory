@@ -113,6 +113,9 @@ enum L10n {
     static var dishHistoryTitle: LocalizedStringResource { t("dishDetail.history.title") }
     static var dishOpenRecipe: LocalizedStringResource { t("dishDetail.button.recipe") }
     static var dishAddFavorite: LocalizedStringResource { t("dishDetail.a11y.addFavorite") }
+    static func dishRatingValue(_ value: Int) -> LocalizedStringResource {
+        t("dishDetail.a11y.rating \(value)")
+    }
     static var dishRemoveFavorite: LocalizedStringResource { t("dishDetail.a11y.removeFavorite") }
     static var dishShare: LocalizedStringResource { t("dishDetail.button.share") }
 
@@ -146,6 +149,7 @@ enum L10n {
 
     // 設定
     static var settingsTitle: LocalizedStringResource { t("settings.title") }
+    static var settingsOpen: LocalizedStringResource { t("settings.a11y.open") }
     static var settingsDataSection: LocalizedStringResource { t("settings.section.data") }
     static var settingsExport: LocalizedStringResource { t("settings.button.export") }
     static var settingsExporting: LocalizedStringResource { t("settings.exporting") }

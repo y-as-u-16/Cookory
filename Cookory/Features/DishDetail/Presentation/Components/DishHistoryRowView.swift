@@ -34,6 +34,6 @@ struct RatingView: View {
             }
         }
         .accessibilityElement()
-        .accessibilityLabel("評価 \(rating.value)")
+        .accessibilityLabel(Text(L10n.dishRatingValue(rating.value)))
     }
 }
