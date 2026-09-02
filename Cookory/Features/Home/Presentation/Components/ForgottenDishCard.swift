@@ -9,7 +9,7 @@ struct ForgottenDishCard: View {
         VStack(alignment: .leading, spacing: 8) {
             PhotoImageView(photoID: forgotten.latestPhotoID)
                 .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(forgotten.dish.name.value)

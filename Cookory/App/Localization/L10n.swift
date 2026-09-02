@@ -97,6 +97,7 @@ enum L10n {
     static var cookbookEmptyTitle: LocalizedStringResource { t("cookbook.empty.title") }
     static var cookbookEmptyDescription: LocalizedStringResource { t("cookbook.empty.description") }
     static func cookCount(_ count: Int) -> LocalizedStringResource { t("cookbook.count \(count)") }
+    static var cookbookSortLabel: LocalizedStringResource { t("cookbook.sort.label") }
     static var sortRecentlyCooked: LocalizedStringResource { t("cookbook.sort.recent") }
     static var sortMostCooked: LocalizedStringResource { t("cookbook.sort.most") }
     static var sortNotCookedRecently: LocalizedStringResource { t("cookbook.sort.notRecent") }

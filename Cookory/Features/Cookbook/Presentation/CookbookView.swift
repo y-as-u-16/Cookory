@@ -42,20 +42,25 @@ struct CookbookView: View {
 
     private var sortMenu: some View {
         Menu {
-            ForEach(CookbookSort.allCases, id: \.self) { sort in
-                Button {
-                    Task { await viewModel.changeSort(to: sort) }
-                } label: {
-                    if viewModel.sort == sort {
-                        Label { Text(sort.displayName) } icon: { Image(systemName: "checkmark") }
-                    } else {
-                        Text(sort.displayName)
-                    }
+            // Picker なら選択中の印を OS が描く。checkmark を手で組むと
+            // 標準の見た目から外れる。
+            Picker(String(localized: L10n.cookbookSortLabel), selection: sortBinding) {
+                ForEach(CookbookSort.allCases, id: \.self) { sort in
+                    Text(sort.displayName).tag(sort)
                 }
             }
+            .pickerStyle(.inline)
         } label: {
             Image(systemName: "arrow.up.arrow.down")
         }
+        .accessibilityLabel(Text(L10n.cookbookSortLabel))
+    }
+
+    private var sortBinding: Binding<CookbookSort> {
+        Binding(
+            get: { viewModel.sort },
+            set: { sort in Task { await viewModel.changeSort(to: sort) } }
+        )
     }
 
     private var emptyState: some View {

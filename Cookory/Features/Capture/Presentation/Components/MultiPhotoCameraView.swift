@@ -114,7 +114,7 @@ struct MultiPhotoCameraView: View {
                             .resizable()
                             .scaledToFill()
                             .frame(width: 56, height: 56)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.thumbnail, style: .continuous))
                     }
 
                     Button(action: session.undoLast) {
@@ -122,7 +122,7 @@ struct MultiPhotoCameraView: View {
                             .font(.caption)
                             .labelStyle(.iconOnly)
                             .frame(width: 56, height: 56)
-                            .glassEffect(.regular, in: .rect(cornerRadius: 8))
+                            .glassEffect(.regular, in: .rect(cornerRadius: CornerRadius.thumbnail))
                             .foregroundStyle(.white)
                     }
                     .accessibilityLabel(Text(L10n.cameraUndo))

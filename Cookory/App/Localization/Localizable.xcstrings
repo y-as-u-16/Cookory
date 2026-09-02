@@ -1888,6 +1888,22 @@
           }
         }
       }
+    },
+    "cookbook.sort.label": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "並び替え"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

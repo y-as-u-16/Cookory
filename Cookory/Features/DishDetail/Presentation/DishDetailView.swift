@@ -103,7 +103,7 @@ private struct ShareSheetView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(maxHeight: 420)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.hero))
             }
             ShareLink(item: image, preview: SharePreview("Cookory")) {
                 Label(L10n.dishShare, systemImage: "square.and.arrow.up")
