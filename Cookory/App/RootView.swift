@@ -60,12 +60,23 @@ private struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             ForEach(AppTab.allCases, id: \.self) { tab in
-                TabStack(tab: tab, container: container, router: routers[tab] ?? AppRouter())
-                    .tabItem { Label(tab.title, systemImage: tab.systemImage) }
-                    .tag(tab)
+                // 検索は role を与えると、OS が専用の位置と見た目に昇格させる。
+                if tab == .search {
+                    Tab(value: tab, role: .search) { stack(for: tab) }
+                } else {
+                    Tab(tab.title, systemImage: tab.systemImage, value: tab) {
+                        stack(for: tab)
+                    }
+                }
             }
         }
+        // 写真を主役にするため、スクロール中はタブバーを畳む。
+        .tabBarMinimizeBehavior(.onScrollDown)
         .dependencies(container)
+    }
+
+    private func stack(for tab: AppTab) -> some View {
+        TabStack(tab: tab, container: container, router: routers[tab] ?? AppRouter())
     }
 }
 
