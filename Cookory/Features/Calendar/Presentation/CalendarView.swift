@@ -16,26 +16,14 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        // List なのはその日の記録をスワイプで消せるようにするため。
-        // カレンダー部分は区切り線と余白を外して従来の見た目を保つ。
+        // List は記録だけを持つ。スワイプ削除が List に依存するため。
         List {
-            Section {
-                VStack(spacing: 20) {
-                    weekdayHeader
-                    grid
-                    if let message = viewModel.errorMessage {
-                        Text(message).font(.footnote).foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.vertical, 8)
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-            }
-
             selectedDaySection
         }
         .listStyle(.plain)
+        // カレンダーを行として入れると、区切り線・余白・背景をすべて打ち消す
+        // 必要があった。List の外に出せばその打ち消しが要らない。
+        .safeAreaInset(edge: .top, spacing: 0) { calendarHeader }
         .navigationTitle(Text(L10n.calendarTitle))
         .navigationBarTitleDisplayMode(.inline)
         // List の行に置くと、行タップがボタンを吸収して個別に反応しない。
@@ -59,6 +47,20 @@ struct CalendarView: View {
         } message: { _ in
             Text(L10n.mealDetailDeleteMessage)
         }
+    }
+
+    private var calendarHeader: some View {
+        VStack(spacing: 20) {
+            weekdayHeader
+            grid
+            if let message = viewModel.errorMessage {
+                Text(message).font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        // 記録の一覧がこの下をスクロールするため、地を敷いて透けを防ぐ。
+        .background(.bar)
     }
 
     @ToolbarContentBuilder
