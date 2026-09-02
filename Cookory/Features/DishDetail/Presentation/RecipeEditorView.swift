@@ -12,12 +12,6 @@ struct RecipeEditorView: View {
         Form {
             RecipeContentFields(draft: viewModel.draft)
 
-            Section {
-                Button(String(localized: L10n.recipeSave)) {
-                    Task { await viewModel.save() }
-                }
-            }
-
             RecipeLinkFields(
                 draft: viewModel.draft,
                 onAdd: { Task { await viewModel.addLink() } },
@@ -30,6 +24,14 @@ struct RecipeEditorView: View {
         }
         .navigationTitle(Text(L10n.recipeTitle))
         .navigationBarTitleDisplayMode(.inline)
+        // Form の中間に置くと、リンクを足しに下へ行くたび保存が視界から消える。
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(String(localized: L10n.recipeSave)) {
+                    Task { await viewModel.save() }
+                }
+            }
+        }
         .task { await viewModel.load() }
     }
 }
