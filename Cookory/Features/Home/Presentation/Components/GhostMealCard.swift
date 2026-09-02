@@ -7,7 +7,7 @@ import SwiftUI
 struct GhostMealCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: CornerRadius.hero, style: .continuous)
                 .fill(.quaternary)
                 .aspectRatio(4 / 3, contentMode: .fit)
                 .overlay(

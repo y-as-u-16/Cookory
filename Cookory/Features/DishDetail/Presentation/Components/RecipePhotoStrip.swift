@@ -41,7 +41,7 @@ struct RecipePhotoStrip: View {
         } label: {
             PhotoImageView(photoID: photoID, size: .thumbnail)
                 .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.thumbnail, style: .continuous))
         }
         .buttonStyle(.plain)
         .overlay(alignment: .topTrailing) {
@@ -65,7 +65,7 @@ struct RecipePhotoStrip: View {
             matching: .images,
             photoLibrary: .shared()
         ) {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: CornerRadius.thumbnail, style: .continuous)
                 .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4]))
                 .foregroundStyle(.tertiary)
                 .frame(width: 72, height: 72)

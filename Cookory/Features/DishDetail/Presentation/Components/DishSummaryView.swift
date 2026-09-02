@@ -7,7 +7,7 @@ struct DishSummaryView: View {
         VStack(alignment: .leading, spacing: 12) {
             PhotoImageView(photoID: history.latestPhotoID, size: .hero)
                 .frame(height: 220)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.hero, style: .continuous))
                 .frame(maxWidth: .infinity)
             Text(L10n.dishCookCount(history.cookCount))
                 .font(.title3.weight(.semibold))

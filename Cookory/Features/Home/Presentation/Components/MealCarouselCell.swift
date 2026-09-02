@@ -9,7 +9,7 @@ struct MealCarouselCell: View {
         VStack(alignment: .leading, spacing: 8) {
             PhotoImageView(photoID: recent.meal.photoIDs.first)
                 .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(recent.title ?? "")

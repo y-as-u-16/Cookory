@@ -28,6 +28,6 @@ struct CalendarDayCell: View {
         .frame(height: 56)
         .frame(maxWidth: .infinity)
         .background(isSelected ? Color.accentColor.opacity(0.15) : .clear,
-                    in: RoundedRectangle(cornerRadius: 8))
+                    in: RoundedRectangle(cornerRadius: CornerRadius.thumbnail))
     }
 }

@@ -23,7 +23,7 @@ struct RecipeLinkChip: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: CornerRadius.chip, style: .continuous)
                 .fill(Color.accentColor.opacity(0.12))
         )
     }

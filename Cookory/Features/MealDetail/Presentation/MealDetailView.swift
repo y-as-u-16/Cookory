@@ -83,7 +83,7 @@ struct MealDetailView: View {
                     ForEach(Array(detail.meal.photoIDs.enumerated()), id: \.element) { index, photoID in
                         PhotoImageView(photoID: photoID, size: .hero)
                             .frame(width: 160, height: 160)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous))
                             .accessibilityLabel(
                                 Text(L10n.a11yPhotoIndex(index + 1, detail.meal.photoIDs.count))
                             )
