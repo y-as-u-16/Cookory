@@ -19,7 +19,7 @@ struct RecipeEditorView: View {
             )
 
             if let message = viewModel.errorMessage {
-                Section { Text(message).font(.footnote).foregroundStyle(.red) }
+                Section { InlineErrorView(message: message) }
             }
         }
         .navigationTitle(Text(L10n.recipeTitle))
@@ -74,7 +74,7 @@ private struct RecipeLinkFields: View {
                         Image(systemName: "minus.circle.fill").foregroundStyle(.red)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(link.displayName)
+                    .accessibilityLabel(Text(L10n.recipeLinkRemove(link.displayName)))
                 }
             }
 

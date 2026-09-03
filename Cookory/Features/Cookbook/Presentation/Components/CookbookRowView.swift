@@ -26,5 +26,7 @@ struct CookbookRowView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
+        // まとめないと 1 行に到達するのに 5 回スワイプが要る。
+        .accessibilityElement(children: .combine)
     }
 }

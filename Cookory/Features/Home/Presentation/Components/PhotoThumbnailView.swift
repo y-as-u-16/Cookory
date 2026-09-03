@@ -22,6 +22,9 @@ struct PhotoThumbnailView: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.thumbnail))
+        // 写真そのものに意味は無く、隣の文字が中身を伝える。読み上げに残すと
+        // 一覧をたどるたび「写真」が繰り返される。
+        .accessibilityHidden(true)
         .task(id: photoID) { await load() }
     }
 

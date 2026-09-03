@@ -18,7 +18,8 @@ struct RecipeLinkChip: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(link.displayName)
+            // リンク名だけだと、リンク本体と同じ読み上げになり区別がつかない。
+            .accessibilityLabel(Text(L10n.recipeLinkRemove(link.displayName)))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

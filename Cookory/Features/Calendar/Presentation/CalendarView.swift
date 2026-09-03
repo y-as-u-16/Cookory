@@ -54,7 +54,7 @@ struct CalendarView: View {
             weekdayHeader
             grid
             if let message = viewModel.errorMessage {
-                Text(message).font(.footnote).foregroundStyle(.secondary)
+                InlineErrorView(message: message)
             }
         }
         .padding(.horizontal)
@@ -111,6 +111,17 @@ struct CalendarView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                // 記録の有無は写真というグラフィックでしか示していない。
+                // 読み上げには言葉で渡す。
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(day, format: .dateTime.month().day()))
+                .accessibilityValue(
+                    Text(viewModel.summary(for: day)
+                        .map { L10n.a11yMealCount($0.mealCount) } ?? L10n.calendarNoRecord)
+                )
+                .accessibilityAddTraits(
+                    viewModel.selectedDate == day ? [.isButton, .isSelected] : [.isButton]
+                )
             }
         }
     }

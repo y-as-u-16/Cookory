@@ -65,6 +65,9 @@ struct MealDishRowView: View {
         .animation(.snappy(duration: 0.2), value: isExpanded)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
+        // 開いているかを値として渡す。ヒントは VoiceOver 設定で切れるため、
+        // 状態はそれとは別の経路でも伝える。
+        .accessibilityValue(Text(isExpanded ? L10n.a11yExpanded : L10n.a11yCollapsed))
         .accessibilityHint(Text(isExpanded ? L10n.a11yCollapseRecipe : L10n.a11yExpandRecipe))
     }
 
