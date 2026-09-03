@@ -23,6 +23,9 @@ struct MultiPhotoCameraView: View {
             Color.black.ignoresSafeArea()
             content
         }
+        // Reduce Transparency で Material は不透明化する。Light のままだと
+        // 白い面に白文字が乗って消えるため、この画面だけ暗色に倒す。
+        .environment(\.colorScheme, .dark)
         .task { await session.start() }
         // 「完了」以外の経路でも確実に止める。回したままだと
         // プライバシーインジケータが点き続け、電池も減る。
@@ -64,6 +67,8 @@ struct MultiPhotoCameraView: View {
             // 黒の半透明はプレビュー映像を潰す。Glass なら背景が透ける。
             .glassEffect(.regular, in: .capsule)
             .padding()
+            // 撮影の結果は視覚でしか返らない。何枚撮れたかを読み上げさせる。
+            .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var controls: some View {
@@ -77,7 +82,10 @@ struct MultiPhotoCameraView: View {
                 Spacer()
                 Button(String(localized: L10n.cameraDone), action: finish)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(session.hasCaptured ? .white : .gray)
+                    // 固定色のグレーは Increase Contrast でも変化せず、
+                    // 押せるかどうかが色だけの差になる。
+                    .foregroundStyle(.white)
+                    .opacity(session.hasCaptured ? 1 : 0.4)
                     .disabled(!session.hasCaptured)
             }
             .padding(.horizontal, 24)
@@ -96,7 +104,8 @@ struct MultiPhotoCameraView: View {
                 .frame(width: 72, height: 72)
                 .overlay {
                     Circle()
-                        .fill(session.canCapture ? .white : .gray)
+                        .fill(.white)
+                        .opacity(session.canCapture ? 1 : 0.4)
                         .frame(width: 58, height: 58)
                 }
         }
@@ -119,7 +128,9 @@ struct MultiPhotoCameraView: View {
 
                     Button(action: session.undoLast) {
                         Label(L10n.cameraUndo, systemImage: "arrow.uturn.backward")
-                            .font(.caption)
+                            // 枠が 56pt 固定なので、Dynamic Type に追従させると
+                            // アイコンがはみ出してクリップされる。
+                            .font(.system(size: 20))
                             .labelStyle(.iconOnly)
                             .frame(width: 56, height: 56)
                             .glassEffect(.regular, in: .rect(cornerRadius: CornerRadius.thumbnail))

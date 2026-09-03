@@ -51,6 +51,10 @@ struct RecipePhotoStrip: View {
                 Image(systemName: "xmark.circle.fill")
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.white, .black.opacity(0.55))
+                    // 既定のままだと 17pt 程度。隣のサムネイルと 8pt しか
+                    // 離れておらず、誤タップで写真が消える。
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .offset(x: 5, y: -5)

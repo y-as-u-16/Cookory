@@ -61,14 +61,7 @@ struct MealDetailView: View {
             noteSection(detail)
 
             if let message = viewModel.errorMessage {
-                Section {
-                    // 色だけで異常を示さない。アイコンを添える。
-                    Label { Text(message) } icon: {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                }
+                Section { InlineErrorView(message: message) }
             }
 
             saveSection

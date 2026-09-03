@@ -90,6 +90,9 @@ enum L10n {
     static var calendarTitle: LocalizedStringResource { t("calendar.title") }
     static var calendarNoRecord: LocalizedStringResource { t("calendar.empty") }
     static var calendarPreviousMonth: LocalizedStringResource { t("calendar.a11y.previousMonth") }
+    static func a11yMealCount(_ count: Int) -> LocalizedStringResource {
+        t("calendar.a11y.mealCount \(count)")
+    }
     static var calendarNextMonth: LocalizedStringResource { t("calendar.a11y.nextMonth") }
 
     // 図鑑
@@ -131,10 +134,15 @@ enum L10n {
     static var recipePhotos: LocalizedStringResource { t("recipe.section.photos") }
     static var recipePhotoAdd: LocalizedStringResource { t("recipe.button.addPhoto") }
     static var recipePhotoRemove: LocalizedStringResource { t("recipe.button.removePhoto") }
+    static func recipeLinkRemove(_ name: String) -> LocalizedStringResource {
+        t("recipe.button.removeLink \(name)")
+    }
     static var recipeIngredientsExample: LocalizedStringResource { t("recipe.example.ingredients") }
     static var recipeStepsExample: LocalizedStringResource { t("recipe.example.steps") }
 
     // アクセシビリティ
+    static var a11yExpanded: LocalizedStringResource { t("a11y.state.expanded") }
+    static var a11yCollapsed: LocalizedStringResource { t("a11y.state.collapsed") }
     static var a11yExpandRecipe: LocalizedStringResource { t("a11y.recipe.expand") }
     static var a11yCollapseRecipe: LocalizedStringResource { t("a11y.recipe.collapse") }
     static func a11yPhotoIndex(_ index: Int, _ total: Int) -> LocalizedStringResource {
@@ -170,6 +178,7 @@ enum L10n {
     // 共通
     static var commonCancel: LocalizedStringResource { t("common.button.cancel") }
     static var commonDone: LocalizedStringResource { t("common.button.done") }
+    static var errorTitle: LocalizedStringResource { t("error.title") }
     static var errorGeneric: LocalizedStringResource { t("error.generic") }
     static var errorLoad: LocalizedStringResource { t("error.load") }
     static var errorSave: LocalizedStringResource { t("error.save") }

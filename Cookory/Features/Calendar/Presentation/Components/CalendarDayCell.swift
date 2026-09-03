@@ -29,5 +29,12 @@ struct CalendarDayCell: View {
         .frame(maxWidth: .infinity)
         .background(isSelected ? Color.accentColor.opacity(0.15) : .clear,
                     in: RoundedRectangle(cornerRadius: CornerRadius.thumbnail))
+        // 薄い塗りだけでは Increase Contrast でも埋もれる。枠で形も変える。
+        .overlay {
+            if isSelected {
+                RoundedRectangle(cornerRadius: CornerRadius.thumbnail)
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
+            }
+        }
     }
 }

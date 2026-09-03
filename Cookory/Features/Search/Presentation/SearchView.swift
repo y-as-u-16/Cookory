@@ -52,9 +52,16 @@ struct SearchView: View {
             ),
             prompt: Text(L10n.searchPrompt)
         )
+        // 結果の上に文字を重ねると、どちらが本文か読み取れない。
+        // 画面を占める形にして、異常であることを明示する。
         .overlay {
             if let message = viewModel.errorMessage {
-                Text(message).foregroundStyle(.secondary)
+                ContentUnavailableView {
+                    Label(L10n.errorTitle, systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(message)
+                }
+                .background(.background)
             }
         }
     }

@@ -29,5 +29,6 @@ struct MealRowView: View {
         // 行のどこを押しても開けるようにする。写真と文字の隙間が反応しないと、
         // 狙って突く操作になる。
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
