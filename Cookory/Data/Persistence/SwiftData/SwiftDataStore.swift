@@ -27,28 +27,28 @@ actor SwiftDataStore {
         return SwiftDataStore(modelContainer: container)
     }
 
-    // MARK: - Primitives
+    /// Context を使う処理を Store の隔離下で実行し、Sendable な結果だけを返す。
+    ///
+    /// PersistentModel は自身が属する ModelContext への参照を持つため、actor の外へ
+    /// 出して操作すると隔離が破れる。モデルに触る処理をこのクロージャに閉じ込め、
+    /// 境界を越えるのは Domain 型だけにする。
+    func perform<T: Sendable>(_ work: (ModelContext) throws -> T) throws -> T {
+        try work(modelContext)
+    }
 
+    /// perform と同じだが、変更を確定させる。
+    func performAndSave<T: Sendable>(_ work: (ModelContext) throws -> T) throws -> T {
+        let result = try work(modelContext)
+        guard modelContext.hasChanges else { return result }
+        try modelContext.save()
+        return result
+    }
+}
+
+extension ModelContext {
     func fetchOne<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) throws -> T? {
         var limited = descriptor
         limited.fetchLimit = 1
-        return try modelContext.fetch(limited).first
-    }
-
-    func fetch<T: PersistentModel>(_ descriptor: FetchDescriptor<T>) throws -> [T] {
-        try modelContext.fetch(descriptor)
-    }
-
-    func insert<T: PersistentModel>(_ model: T) {
-        modelContext.insert(model)
-    }
-
-    func delete<T: PersistentModel>(_ model: T) {
-        modelContext.delete(model)
-    }
-
-    func save() throws {
-        guard modelContext.hasChanges else { return }
-        try modelContext.save()
+        return try fetch(limited).first
     }
 }

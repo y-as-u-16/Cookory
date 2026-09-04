@@ -13,33 +13,35 @@ struct SwiftDataCookbookQuery: CookbookQuery {
         guard limit > 0 else { return [] }
 
         let items = try await withPersistenceError {
-            let dishes = try await store.fetch(FetchDescriptor<DishModel>())
-            let logs = try await store.fetch(FetchDescriptor<DishLogModel>(
-                sortBy: [SortDescriptor(\.cookedAt, order: .reverse)]
-            ))
+            try await store.perform { context in
+                let dishes = try context.fetch(FetchDescriptor<DishModel>())
+                let logs = try context.fetch(FetchDescriptor<DishLogModel>(
+                    sortBy: [SortDescriptor(\.cookedAt, order: .reverse)]
+                ))
 
-            // 1 件ずつ fetchLogs を呼ぶと料理の数だけクエリが飛ぶ。
-            // 全件を 1 度読んで畳む。
-            var logsByDish: [UUID: [DishLogModel]] = [:]
-            for log in logs {
-                logsByDish[log.dishID, default: []].append(log)
-            }
+                // 1 件ずつ fetchLogs を呼ぶと料理の数だけクエリが飛ぶ。
+                // 全件を 1 度読んで畳む。
+                var logsByDish: [UUID: [DishLogModel]] = [:]
+                for log in logs {
+                    logsByDish[log.dishID, default: []].append(log)
+                }
 
-            // 最新の履歴が属する食事記録から写真を引く。
-            let meals = try await store.fetch(FetchDescriptor<MealRecordModel>())
-            let photoByMeal = Dictionary(
-                meals.map { ($0.id, $0.photoIDs.first) }, uniquingKeysWith: { first, _ in first }
-            )
-
-            // 作った料理だけを並べる。履歴の無い Dish は図鑑に出さない。
-            return try dishes.compactMap { model -> CookbookItem? in
-                guard let dishLogs = logsByDish[model.id], !dishLogs.isEmpty else { return nil }
-                return CookbookItem(
-                    dish: try model.toDomain(),
-                    cookCount: dishLogs.count,
-                    lastCookedAt: dishLogs.first?.cookedAt,
-                    latestPhotoID: dishLogs.first.flatMap { photoByMeal[$0.mealRecordID] } ?? nil
+                // 最新の履歴が属する食事記録から写真を引く。
+                let meals = try context.fetch(FetchDescriptor<MealRecordModel>())
+                let photoByMeal = Dictionary(
+                    meals.map { ($0.id, $0.photoIDs.first) }, uniquingKeysWith: { first, _ in first }
                 )
+
+                // 作った料理だけを並べる。履歴の無い Dish は図鑑に出さない。
+                return try dishes.compactMap { model -> CookbookItem? in
+                    guard let dishLogs = logsByDish[model.id], !dishLogs.isEmpty else { return nil }
+                    return CookbookItem(
+                        dish: try model.toDomain(),
+                        cookCount: dishLogs.count,
+                        lastCookedAt: dishLogs.first?.cookedAt,
+                        latestPhotoID: dishLogs.first.flatMap { photoByMeal[$0.mealRecordID] } ?? nil
+                    )
+                }
             }
         }
 

@@ -14,24 +14,28 @@ struct SwiftDataSearchQuery: SearchQuery {
         guard let normalized = keyword.normalizedOrNil, limit > 0 else { return .empty }
 
         return try await withPersistenceError {
-            SearchResults(
-                dishes: try await searchDishes(normalized, limit: limit),
-                meals: try await searchMeals(normalized, limit: limit)
-            )
+            try await store.perform { context in
+                SearchResults(
+                    dishes: try searchDishes(normalized, limit: limit, in: context),
+                    meals: try searchMeals(normalized, limit: limit, in: context)
+                )
+            }
         }
     }
 
-    private func searchDishes(_ keyword: String, limit: Int) async throws -> [CookbookItem] {
+    private func searchDishes(
+        _ keyword: String, limit: Int, in context: ModelContext
+    ) throws -> [CookbookItem] {
         var descriptor = FetchDescriptor<DishModel>(
             predicate: #Predicate { $0.name.localizedStandardContains(keyword) },
             sortBy: [SortDescriptor(\.name)]
         )
         descriptor.fetchLimit = limit
-        let models = try await store.fetch(descriptor)
+        let models = try context.fetch(descriptor)
 
         // 該当した料理の履歴だけを 1 度に読む。件数を出すために必要。
         let ids = Set(models.map(\.id))
-        let logs = try await store.fetch(FetchDescriptor<DishLogModel>(
+        let logs = try context.fetch(FetchDescriptor<DishLogModel>(
             sortBy: [SortDescriptor(\.cookedAt, order: .reverse)]
         )).filter { ids.contains($0.dishID) }
 
@@ -51,12 +55,14 @@ struct SwiftDataSearchQuery: SearchQuery {
         }
     }
 
-    private func searchMeals(_ keyword: String, limit: Int) async throws -> [MealRecord] {
+    private func searchMeals(
+        _ keyword: String, limit: Int, in context: ModelContext
+    ) throws -> [MealRecord] {
         var descriptor = FetchDescriptor<MealRecordModel>(
             predicate: #Predicate { $0.note?.localizedStandardContains(keyword) ?? false },
             sortBy: [SortDescriptor(\.occurredAt, order: .reverse)]
         )
         descriptor.fetchLimit = limit
-        return try await store.fetch(descriptor).map { $0.toDomain() }
+        return try context.fetch(descriptor).map { $0.toDomain() }
     }
 }

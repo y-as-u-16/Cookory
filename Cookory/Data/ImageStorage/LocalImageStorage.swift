@@ -9,20 +9,18 @@ import UniformTypeIdentifiers
 /// DB の肥大化を避け、将来 Cloud Storage へ移しやすくするため。
 actor LocalImageStorage: ImageStorage {
     /// 長辺の上限。元画像が大きくてもこのサイズに収める。
-    private static let maxDimension: CGFloat = 2048
-    private static let thumbnailDimension: CGFloat = 400
-    private static let compressionQuality: CGFloat = 0.85
+    private nonisolated static let maxDimension: CGFloat = 2048
+    private nonisolated static let thumbnailDimension: CGFloat = 400
+    private nonisolated static let compressionQuality: CGFloat = 0.85
 
     private nonisolated let originalsDirectory: URL
     private nonisolated let thumbnailsDirectory: URL
-    private nonisolated let fileManager: FileManager
 
     init(
         originalsDirectory: URL? = nil,
         thumbnailsDirectory: URL? = nil,
         fileManager: FileManager = .default
     ) throws {
-        self.fileManager = fileManager
         self.originalsDirectory = try originalsDirectory ?? Self.defaultDirectory(
             for: .applicationSupportDirectory, fileManager: fileManager
         )
@@ -30,6 +28,10 @@ actor LocalImageStorage: ImageStorage {
             for: .cachesDirectory, fileManager: fileManager
         )
     }
+
+    /// save が nonisolated で並行に走るため、FileManager を保持して共有できない。
+    /// インスタンスメソッドはスレッドセーフではなく、共有すると書き込みが競合する。
+    private nonisolated var fileManager: FileManager { FileManager() }
 
     private static func defaultDirectory(
         for directory: FileManager.SearchPathDirectory,
