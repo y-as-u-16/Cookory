@@ -159,15 +159,23 @@ struct MealDetailView: View {
             } label: {
                 Text(L10n.mealDetailSave)
                     .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
+                    // 削除ボタン（List 標準の行）と同じ高さに揃える。
+                    .frame(maxWidth: .infinity, minHeight: 22)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.small)
             .disabled(!viewModel.hasUnsavedChanges)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
-        } footer: {
+
+            // 未保存の注記は Section の footer にしない。変更が無いときも
+            // 空の footer が高さを取り、削除ボタンとの間が空く。
             if viewModel.hasUnsavedChanges {
                 Text(L10n.mealDetailUnsavedHint)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+                    .listRowBackground(Color.clear)
             }
         }
     }
@@ -178,5 +186,7 @@ struct MealDetailView: View {
                 isConfirmingDelete = true
             }
         }
+        // 保存の直下に置く。標準の節間だと同じ操作群に見えないほど離れる。
+        .listSectionSpacing(8)
     }
 }

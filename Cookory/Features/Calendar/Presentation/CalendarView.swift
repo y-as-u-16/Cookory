@@ -61,6 +61,24 @@ struct CalendarView: View {
         .padding(.vertical, 8)
         // 記録の一覧がこの下をスクロールするため、地を敷いて透けを防ぐ。
         .background(.bar)
+        // カレンダー部分は List の外にあるため、行の swipeActions とは競合しない。
+        .gesture(monthSwipe)
+    }
+
+    /// 横に払って月を移す。縦の動きが大きいときは一覧のスクロールとして扱う。
+    private var monthSwipe: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                let horizontal = value.translation.width
+                guard abs(horizontal) > abs(value.translation.height) else { return }
+                Task {
+                    if horizontal < 0 {
+                        await viewModel.showNextMonth()
+                    } else {
+                        await viewModel.showPreviousMonth()
+                    }
+                }
+            }
     }
 
     @ToolbarContentBuilder
