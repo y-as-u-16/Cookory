@@ -13,26 +13,35 @@ struct SwiftDataCookbookQuery: CookbookQuery {
         guard limit > 0 else { return [] }
 
         let items = try await withPersistenceError {
-            try await store.perform { context in
-                let dishes = try context.fetch(FetchDescriptor<DishModel>())
+            try await store.perform { context -> [CookbookItem] in
+                // 1 件ずつ fetchLogs を呼ぶと料理の数だけクエリが飛ぶ。
+                // 全件を 1 度読んで畳む。
                 let logs = try context.fetch(FetchDescriptor<DishLogModel>(
                     sortBy: [SortDescriptor(\.cookedAt, order: .reverse)]
                 ))
 
-                // 1 件ずつ fetchLogs を呼ぶと料理の数だけクエリが飛ぶ。
-                // 全件を 1 度読んで畳む。
                 var logsByDish: [UUID: [DishLogModel]] = [:]
                 for log in logs {
                     logsByDish[log.dishID, default: []].append(log)
                 }
 
-                // 最新の履歴が属する食事記録から写真を引く。
-                let meals = try context.fetch(FetchDescriptor<MealRecordModel>())
+                // 作った料理だけを並べる。履歴の無い Dish は図鑑に出さないので、
+                // 全件を読まず履歴のある ID に絞って引く。
+                let cookedDishIDs = Set(logsByDish.keys)
+                guard !cookedDishIDs.isEmpty else { return [] }
+                let dishes = try context.fetch(FetchDescriptor<DishModel>(
+                    predicate: #Predicate { cookedDishIDs.contains($0.id) }
+                ))
+
+                // 最新の履歴が属する食事記録から写真を引く。参照される記録だけを読む。
+                let latestMealIDs = Set(logsByDish.values.compactMap(\.first?.mealRecordID))
+                let meals = try context.fetch(FetchDescriptor<MealRecordModel>(
+                    predicate: #Predicate { latestMealIDs.contains($0.id) }
+                ))
                 let photoByMeal = Dictionary(
                     meals.map { ($0.id, $0.photoIDs.first) }, uniquingKeysWith: { first, _ in first }
                 )
 
-                // 作った料理だけを並べる。履歴の無い Dish は図鑑に出さない。
                 return try dishes.compactMap { model -> CookbookItem? in
                     guard let dishLogs = logsByDish[model.id], !dishLogs.isEmpty else { return nil }
                     return CookbookItem(
@@ -45,6 +54,8 @@ struct SwiftDataCookbookQuery: CookbookQuery {
             }
         }
 
+        // 並べ替えとページングを DB に任せられない。cookCount と lastCookedAt は
+        // 履歴を畳んで初めて決まる派生値で、mostCooked などの順序はそれに依存する。
         return Self.sorted(items, by: sort)
             .dropFirst(offset)
             .prefix(limit)

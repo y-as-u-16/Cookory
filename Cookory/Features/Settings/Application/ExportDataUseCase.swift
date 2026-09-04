@@ -69,6 +69,7 @@ struct ExportDataUseCase: Sendable {
             to: payload,
             mealCount: meals.recordCount,
             photoCount: meals.photoCount,
+            failedPhotoCount: meals.failedPhotoCount,
             dishCount: dishCounts.dishes,
             dishLogCount: dishCounts.logs
         )
@@ -81,9 +82,10 @@ struct ExportDataUseCase: Sendable {
         to directory: URL,
         imagesDirectory: URL,
         progress: @Sendable (Double) -> Void
-    ) async throws -> (recordCount: Int, photoCount: Int) {
+    ) async throws -> (recordCount: Int, photoCount: Int, failedPhotoCount: Int) {
         var exported: [ExportedMeal] = []
         var photoCount = 0
+        var failedPhotoCount = 0
         var offset = 0
 
         while true {
@@ -94,8 +96,11 @@ struct ExportDataUseCase: Sendable {
                 exported.append(ExportedMeal(meal))
                 for photoID in meal.photoIDs {
                     // 1 枚の失敗で書き出し全体を止めない。写真は後から回収できないが、
-                    // 記録本体を救うほうが利用者の損失は小さい。
-                    guard let data = try? await imageStorage.load(id: photoID) else { continue }
+                    // 記録本体を救うほうが利用者の損失は小さい。件数は manifest に残す。
+                    guard let data = try? await imageStorage.load(id: photoID) else {
+                        failedPhotoCount += 1
+                        continue
+                    }
                     try data.write(to: imagesDirectory.appendingPathComponent("\(photoID).jpg"))
                     photoCount += 1
                 }
@@ -106,7 +111,7 @@ struct ExportDataUseCase: Sendable {
         }
 
         try Self.encode(exported, to: directory.appendingPathComponent("meals.json"))
-        return (exported.count, photoCount)
+        return (exported.count, photoCount, failedPhotoCount)
     }
 
     private func writeDishes(to directory: URL) async throws -> (dishes: Int, logs: Int) {
@@ -123,7 +128,8 @@ struct ExportDataUseCase: Sendable {
     }
 
     private func writeManifest(
-        to directory: URL, mealCount: Int, photoCount: Int, dishCount: Int, dishLogCount: Int
+        to directory: URL, mealCount: Int, photoCount: Int, failedPhotoCount: Int,
+        dishCount: Int, dishLogCount: Int
     ) throws {
         try Self.encode(
             ExportManifest(
@@ -132,7 +138,8 @@ struct ExportDataUseCase: Sendable {
                 mealCount: mealCount,
                 dishCount: dishCount,
                 dishLogCount: dishLogCount,
-                photoCount: photoCount
+                photoCount: photoCount,
+                failedPhotoCount: failedPhotoCount
             ),
             to: directory.appendingPathComponent("manifest.json")
         )

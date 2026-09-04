@@ -21,6 +21,21 @@ struct SwiftDataMealRecordRepository: MealRecordRepository {
         }
     }
 
+    func find(ids: [UUID]) async throws -> [UUID: MealRecord] {
+        guard !ids.isEmpty else { return [:] }
+        let unique = Set(ids)
+        return try await withPersistenceError {
+            try await store.perform { context in
+                let models = try context.fetch(FetchDescriptor<MealRecordModel>(
+                    predicate: #Predicate { unique.contains($0.id) }
+                ))
+                return Dictionary(
+                    models.map { ($0.id, $0.toDomain()) }, uniquingKeysWith: { first, _ in first }
+                )
+            }
+        }
+    }
+
     func fetchRecent(limit: Int) async throws -> [MealRecord] {
         guard limit > 0 else { return [] }
         return try await withPersistenceError {

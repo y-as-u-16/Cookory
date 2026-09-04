@@ -48,6 +48,11 @@ struct PhotoImageView: View {
             return
         }
 
+        if let cached = PhotoImageCache.shared.image(for: photoID, maxDimension: size.maxDimension) {
+            image = cached
+            return
+        }
+
         let data: Data?
         switch size {
         case .thumbnail:
@@ -59,6 +64,10 @@ struct PhotoImageView: View {
         }
 
         // 失敗時は nil に戻す。前の写真が残ると別の記録の画像を見せてしまう。
-        image = data.flatMap { UIImage(data: $0) }
+        let loaded = data.flatMap { UIImage(data: $0) }
+        if let loaded {
+            PhotoImageCache.shared.store(loaded, for: photoID, maxDimension: size.maxDimension)
+        }
+        image = loaded
     }
 }

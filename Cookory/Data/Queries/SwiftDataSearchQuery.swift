@@ -36,8 +36,9 @@ struct SwiftDataSearchQuery: SearchQuery {
         // 該当した料理の履歴だけを 1 度に読む。件数を出すために必要。
         let ids = Set(models.map(\.id))
         let logs = try context.fetch(FetchDescriptor<DishLogModel>(
+            predicate: #Predicate { ids.contains($0.dishID) },
             sortBy: [SortDescriptor(\.cookedAt, order: .reverse)]
-        )).filter { ids.contains($0.dishID) }
+        ))
 
         var logsByDish: [UUID: [DishLogModel]] = [:]
         for log in logs {
