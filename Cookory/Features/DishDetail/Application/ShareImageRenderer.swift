@@ -106,11 +106,11 @@ struct ShareImageRenderer: Sendable {
 
     private func drawBackground(in context: CGContext) {
         let space = CGColorSpaceCreateDeviceRGB()
-        let top = CGColor(colorSpace: space, components: [0.16, 0.11, 0.09, 1])!
-        let bottom = CGColor(colorSpace: space, components: [0.09, 0.06, 0.05, 1])!
-        guard let gradient = CGGradient(
-            colorsSpace: space, colors: [top, bottom] as CFArray, locations: [0, 1]
-        ) else { return }
+        guard let top = CGColor(colorSpace: space, components: [0.16, 0.11, 0.09, 1]),
+              let bottom = CGColor(colorSpace: space, components: [0.09, 0.06, 0.05, 1]),
+              let gradient = CGGradient(
+                  colorsSpace: space, colors: [top, bottom] as CFArray, locations: [0, 1]
+              ) else { return }
         context.drawLinearGradient(
             gradient, start: CGPoint(x: 0, y: Self.height), end: .zero, options: []
         )

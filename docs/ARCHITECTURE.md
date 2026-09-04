@@ -95,13 +95,14 @@ AppleのSwiftUIチームも、SwiftUIはarchitecture-agnosticであり、アプ�
                ▼
 ┌──────────────────────────────┐
 │         Application          │
-│ UseCase / Query / ReadModel  │
+│           UseCase            │
 └──────────────┬───────────────┘
                │
                ▼
 ┌──────────────────────────────┐
 │            Domain            │
 │ Entity / ValueObject / Port  │
+│  （Repository・Query・ReadModel）  │
 └──────────────▲───────────────┘
                │ implements
                │
@@ -693,6 +694,15 @@ Read Modelを返す
 ```
 
 を防止する。
+
+Query protocol と Read Model は Repository と同じく Domain に置く。
+
+Data 層は Query を実装するため戻り値の型を参照する。これを Features 側に
+置くと Data → Features の逆流になり、単一ターゲットでは import が要らない
+ためコンパイラも黙ってしまう。SPM 分割を試みた瞬間に循環参照で詰む。
+
+`scripts/check-architecture.sh` が Data・Domain から Features の型への
+参照を検出する。
 
 ---
 

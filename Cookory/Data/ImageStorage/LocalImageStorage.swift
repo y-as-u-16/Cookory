@@ -29,9 +29,10 @@ actor LocalImageStorage: ImageStorage {
         )
     }
 
-    /// save が nonisolated で並行に走るため、FileManager を保持して共有できない。
+    /// 呼び出しごとに作る。save が nonisolated で並行に走るなか、FileManager の
     /// インスタンスメソッドはスレッドセーフではなく、共有すると書き込みが競合する。
-    private nonisolated var fileManager: FileManager { FileManager() }
+    /// 保持したくないことを名前で示すため、プロパティにはしない。
+    private nonisolated func makeFileManager() -> FileManager { FileManager() }
 
     private static func defaultDirectory(
         for directory: FileManager.SearchPathDirectory,
@@ -74,7 +75,7 @@ actor LocalImageStorage: ImageStorage {
 
     func load(id: UUID) async throws -> Data {
         let url = originalURL(for: id, filename: "original.jpg")
-        guard let data = fileManager.contents(atPath: url.path) else {
+        guard let data = makeFileManager().contents(atPath: url.path) else {
             throw DomainError.notFound(id: id)
         }
         return data
@@ -82,7 +83,7 @@ actor LocalImageStorage: ImageStorage {
 
     func loadThumbnail(id: UUID) async throws -> Data {
         let url = thumbnailURL(for: id)
-        if let data = fileManager.contents(atPath: url.path) {
+        if let data = makeFileManager().contents(atPath: url.path) {
             return data
         }
 
@@ -93,7 +94,7 @@ actor LocalImageStorage: ImageStorage {
         }
         try writeThumbnail(from: source, id: id)
 
-        guard let data = fileManager.contents(atPath: url.path) else {
+        guard let data = makeFileManager().contents(atPath: url.path) else {
             throw DomainError.imageStorageFailed
         }
         return data
@@ -116,8 +117,8 @@ actor LocalImageStorage: ImageStorage {
 
     func delete(id: UUID) async throws {
         for url in [originalDirectory(for: id), thumbnailDirectory(for: id)] {
-            guard fileManager.fileExists(atPath: url.path) else { continue }
-            try fileManager.removeItem(at: url)
+            guard makeFileManager().fileExists(atPath: url.path) else { continue }
+            try makeFileManager().removeItem(at: url)
         }
     }
 
@@ -171,7 +172,7 @@ actor LocalImageStorage: ImageStorage {
     }
 
     private nonisolated func write(_ image: CGImage, to url: URL) throws {
-        try fileManager.createDirectory(
+        try makeFileManager().createDirectory(
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true
         )
 

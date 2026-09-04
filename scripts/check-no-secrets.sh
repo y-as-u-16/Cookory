@@ -36,6 +36,20 @@ while IFS=: read -r file line _; do
   fail "$file" "$line" "Possible credential committed / 認証情報らしき文字列が含まれています"
 done < <(git grep -nE "$CREDENTIAL_PATTERNS" -- . ':!scripts/check-no-secrets.sh' 2>/dev/null)
 
+# --- No personal identifiers ----------------------------------------------
+# 個人を特定する文字列が含まれていないこと
+#
+# Xcode writes "// Created by <name> on ..." into every new Swift file, so this
+# recurs the same way DEVELOPMENT_TEAM does.
+# Xcode が新規 Swift ファイルに必ずヘッダーコメントを入れるため、
+# DEVELOPMENT_TEAM と同じく再発する。
+PERSONAL_PATTERNS='えぎやすゆき|egiyasuyuki|egys16@'
+
+while IFS=: read -r file line _; do
+  [ -z "$file" ] && continue
+  fail "$file" "$line" "Personal identifier must not be committed to a public repository / 公開リポジトリに個人を特定する文字列を含めないでください"
+done < <(git grep -nE "$PERSONAL_PATTERNS" -- . ':!scripts/check-no-secrets.sh' 2>/dev/null)
+
 # --- Result ---------------------------------------------------------------
 if [ "$violations" -gt 0 ]; then
   echo ""

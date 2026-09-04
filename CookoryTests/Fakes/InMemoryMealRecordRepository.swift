@@ -22,6 +22,11 @@ actor InMemoryMealRecordRepository: MealRecordRepository {
         return storage[id]
     }
 
+    func find(ids: [UUID]) async throws -> [UUID: MealRecord] {
+        try throwIfNeeded()
+        return storage.filter { ids.contains($0.key) }
+    }
+
     func fetchRecent(limit: Int) async throws -> [MealRecord] {
         try throwIfNeeded()
         return storage.values

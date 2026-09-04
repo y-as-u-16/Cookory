@@ -189,14 +189,21 @@ struct LocalImageStorageConcurrencyTests {
         return (storage, root)
     }
 
-    private func makeJPEG() throws -> Data {
+    private func width(of data: Data) -> Int? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+        else { return nil }
+        return props[kCGImagePropertyPixelWidth] as? Int
+    }
+
+    private func makeJPEG(width: Int = 64, height: Int = 64) throws -> Data {
         let context = CGContext(
-            data: nil, width: 64, height: 64, bitsPerComponent: 8, bytesPerRow: 0,
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
             space: CGColorSpace(name: CGColorSpace.sRGB)!,
             bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
         )!
         context.setFillColor(CGColor(red: 0.2, green: 0.6, blue: 0.9, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         let image = context.makeImage()!
 
         let output = NSMutableData()
@@ -242,6 +249,40 @@ struct LocalImageStorageConcurrencyTests {
 
         for asset in assets {
             #expect(try await !storage.loadThumbnail(id: asset.id).isEmpty)
+        }
+    }
+
+    /// 並行に保存した画像が互いのファイルを踏まないこと。寸法を変えて保存し、
+    /// 読み出した画像の寸法で取り違えを検出する。
+    ///
+    /// FileManager 共有による競合（PR #78）は確率的にしか起きず、このテストでは
+    /// 再現しない。実装の形は check-architecture.sh が守る。
+    @Test func 並行保存した画像が互いに壊し合わない() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // 寸法を変えて、どの保存の結果かを読み出し側から区別できるようにする。
+        let sizes = (1...30).map { (width: 40 + $0 * 4, height: 60) }
+        let assets = try await withThrowingTaskGroup(
+            of: (PhotoAsset, Int).self
+        ) { group -> [(PhotoAsset, Int)] in
+            for size in sizes {
+                group.addTask {
+                    let jpeg = try self.makeJPEG(width: size.width, height: size.height)
+                    return (try await storage.save(jpeg), size.width)
+                }
+            }
+            var saved: [(PhotoAsset, Int)] = []
+            for try await result in group { saved.append(result) }
+            return saved
+        }
+
+        #expect(assets.count == sizes.count)
+        #expect(Set(assets.map { $0.0.id }).count == sizes.count)
+
+        for (asset, expectedWidth) in assets {
+            let loaded = try await storage.load(id: asset.id)
+            #expect(width(of: loaded) == expectedWidth)
         }
     }
 

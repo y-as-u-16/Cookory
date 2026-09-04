@@ -9,6 +9,10 @@ struct ExportManifest: Codable, Equatable, Sendable {
     let dishCount: Int
     let dishLogCount: Int
     let photoCount: Int
+
+    /// 読み出せず書き出しから漏れた写真の枚数。0 でない ZIP は不完全である
+    /// ことを、開いた人が manifest だけで判断できるようにする。
+    let failedPhotoCount: Int
 }
 
 struct ExportedMeal: Codable, Equatable, Sendable {

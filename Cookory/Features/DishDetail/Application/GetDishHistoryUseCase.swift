@@ -20,10 +20,9 @@ struct GetDishHistoryUseCase: Sendable {
 
         let logs = try await dishRepository.fetchLogs(dishID: dishID)
 
-        var entries: [DishHistoryEntry] = []
-        for log in logs {
-            let meal = try await mealRepository.find(id: log.mealRecordID)
-            entries.append(DishHistoryEntry(log: log, photoID: meal?.photoIDs.first))
+        let meals = try await mealRepository.find(ids: logs.map(\.mealRecordID))
+        let entries = logs.map {
+            DishHistoryEntry(log: $0, photoID: meals[$0.mealRecordID]?.photoIDs.first)
         }
 
         return DishHistory(dish: dish, entries: entries)

@@ -7,6 +7,10 @@ import Foundation
 protocol MealRecordRepository: Sendable {
     func find(id: UUID) async throws -> MealRecord?
 
+    /// 複数の記録をまとめて引く。履歴のように ID の並びが先に決まる場面で、
+    /// 1 件ずつ引くと件数ぶんの往復になる。
+    func find(ids: [UUID]) async throws -> [UUID: MealRecord]
+
     /// 新しい順に取得する。`limit` は一覧表示で全件をメモリに載せないための上限。
     func fetchRecent(limit: Int) async throws -> [MealRecord]
 
