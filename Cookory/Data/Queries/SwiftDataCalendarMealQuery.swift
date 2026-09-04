@@ -16,24 +16,27 @@ struct SwiftDataCalendarMealQuery: CalendarMealQuery {
             return []
         }
 
-        let models = try await withPersistenceError {
+        // 日単位に畳む。境界の判定は渡された calendar のタイムゾーンに従う。
+        let byDay = try await withPersistenceError {
             let start = range.start
             let end = range.end
-            return try await store.fetch(FetchDescriptor<MealRecordModel>(
-                predicate: #Predicate { $0.occurredAt >= start && $0.occurredAt < end },
-                sortBy: [SortDescriptor(\.occurredAt)]
-            ))
-        }
+            return try await store.perform { context in
+                let models = try context.fetch(FetchDescriptor<MealRecordModel>(
+                    predicate: #Predicate { $0.occurredAt >= start && $0.occurredAt < end },
+                    sortBy: [SortDescriptor(\.occurredAt)]
+                ))
 
-        // 日単位に畳む。境界の判定は渡された calendar のタイムゾーンに従う。
-        var byDay: [Date: (count: Int, thumbnailID: UUID?)] = [:]
-        for model in models {
-            let day = calendar.startOfDay(for: model.occurredAt)
-            let existing = byDay[day]
-            byDay[day] = (
-                count: (existing?.count ?? 0) + 1,
-                thumbnailID: existing?.thumbnailID ?? model.photoIDs.first
-            )
+                var byDay: [Date: (count: Int, thumbnailID: UUID?)] = [:]
+                for model in models {
+                    let day = calendar.startOfDay(for: model.occurredAt)
+                    let existing = byDay[day]
+                    byDay[day] = (
+                        count: (existing?.count ?? 0) + 1,
+                        thumbnailID: existing?.thumbnailID ?? model.photoIDs.first
+                    )
+                }
+                return byDay
+            }
         }
 
         return byDay
@@ -46,10 +49,12 @@ struct SwiftDataCalendarMealQuery: CalendarMealQuery {
         guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
 
         return try await withPersistenceError {
-            try await store.fetch(FetchDescriptor<MealRecordModel>(
-                predicate: #Predicate { $0.occurredAt >= start && $0.occurredAt < end },
-                sortBy: [SortDescriptor(\.occurredAt)]
-            )).map { $0.toDomain() }
+            try await store.perform { context in
+                try context.fetch(FetchDescriptor<MealRecordModel>(
+                    predicate: #Predicate { $0.occurredAt >= start && $0.occurredAt < end },
+                    sortBy: [SortDescriptor(\.occurredAt)]
+                )).map { $0.toDomain() }
+            }
         }
     }
 
