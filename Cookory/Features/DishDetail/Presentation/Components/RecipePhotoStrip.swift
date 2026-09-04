@@ -26,9 +26,11 @@ struct RecipePhotoStrip: View {
             }
             .padding(.vertical, 4)
         }
-        .onChange(of: selection) { _, items in
-            guard !items.isEmpty else { return }
-            Task { await load(items) }
+        // task(id:) にすると画面の破棄で読み込みが自動で止まる。素の Task
+        // だと戻ったあとも走り続け、消えた画面に写真を渡してしまう。
+        .task(id: selection) {
+            guard !selection.isEmpty else { return }
+            await load(selection)
         }
         .fullScreenCover(item: $zoomed) { target in
             RecipePhotoViewer(photoID: target.id) { zoomed = nil }
@@ -85,9 +87,11 @@ struct RecipePhotoStrip: View {
     private func load(_ items: [PhotosPickerItem]) async {
         var images: [Data] = []
         for item in items {
+            guard !Task.isCancelled else { return }
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
             images.append(data)
         }
+        guard !Task.isCancelled else { return }
         selection = []
         onAdd(images)
     }

@@ -8,6 +8,16 @@ private struct StoredLink: Codable {
     let title: String?
 }
 
+/// 要素ごとの失敗を配列全体に波及させないための包み。配列を
+/// `[T]` として一度に decode すると、1 件の不正で全件が失われる。
+private struct DecodedElement<T: Decodable>: Decodable {
+    let value: T?
+
+    init(from decoder: Decoder) throws {
+        value = try? decoder.singleValueContainer().decode(T.self)
+    }
+}
+
 extension RecipeModel {
     /// 壊れたリンクは捨てて残りを読む。1 件の不正でレシピ全体を
     /// 読めなくするより、読める範囲を見せるほうが損失が小さい。
@@ -46,19 +56,20 @@ extension RecipeModel {
     }
 
     static func decodeLinks(_ json: String?) -> [RecipeLink] {
-        guard let json, let data = json.data(using: .utf8),
-              let stored = try? JSONDecoder().decode([StoredLink].self, from: data) else {
-            return []
-        }
-        return stored.compactMap { RecipeLink(id: $0.id, rawURL: $0.url, title: $0.title) }
+        decodeElements(json, as: StoredLink.self)
+            .compactMap { RecipeLink(id: $0.id, rawURL: $0.url, title: $0.title) }
     }
 
     static func decodeIDs(_ json: String?) -> [UUID] {
+        decodeElements(json, as: UUID.self)
+    }
+
+    private static func decodeElements<T: Decodable>(_ json: String?, as type: T.Type) -> [T] {
         guard let json, let data = json.data(using: .utf8),
-              let ids = try? JSONDecoder().decode([UUID].self, from: data) else {
+              let elements = try? JSONDecoder().decode([DecodedElement<T>].self, from: data) else {
             return []
         }
-        return ids
+        return elements.compactMap(\.value)
     }
 
     static func encodeIDs(_ ids: [UUID]) -> String? {

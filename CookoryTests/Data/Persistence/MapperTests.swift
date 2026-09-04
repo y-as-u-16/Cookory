@@ -39,4 +39,46 @@ struct MapperTests {
 
         #expect(PhotoAssetModel(from: original).toDomain() == original)
     }
+
+    @Test func 壊れたリンクが1件あっても残りを読める() {
+        let json = """
+        [{"id":"\(UUID().uuidString)","url":"https://example.com/a","title":"A"},\
+        {"id":"not-a-uuid","url":"https://example.com/b","title":"B"},\
+        {"id":"\(UUID().uuidString)","url":"https://example.com/c","title":"C"}]
+        """
+        let model = makeRecipeModel(linksJSON: json)
+
+        let links = model.toDomain().links
+
+        #expect(links.count == 2)
+        #expect(links.map(\.title) == ["A", "C"])
+    }
+
+    @Test func 壊れた写真IDが1件あっても残りを読める() {
+        let kept = UUID()
+        let json = """
+        ["\(kept.uuidString)","not-a-uuid"]
+        """
+        let model = makeRecipeModel(photoIDsJSON: json)
+
+        #expect(model.toDomain().photoIDs == [kept])
+    }
+
+    /// 配列の外形が壊れていれば救えない。要素単位の救済と区別する。
+    @Test func JSONとして壊れたリンクは空になる() {
+        let model = makeRecipeModel(linksJSON: "{壊れている")
+
+        #expect(model.toDomain().links.isEmpty)
+    }
+
+    private func makeRecipeModel(
+        linksJSON: String? = nil,
+        photoIDsJSON: String? = nil
+    ) -> RecipeModel {
+        RecipeModel(
+            id: UUID(), dishID: UUID(), ingredients: nil, steps: nil,
+            linksJSON: linksJSON, photoIDsJSON: photoIDsJSON,
+            createdAt: Date(), updatedAt: Date()
+        )
+    }
 }

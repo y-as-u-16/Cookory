@@ -33,6 +33,18 @@ struct CookbookView: View {
             }
         }
         .listStyle(.plain)
+        // 読み込みに失敗すると一覧が空になる。空状態と区別がつかないので、
+        // 画面を占める形にして異常であることを伝える。
+        .overlay {
+            if let message = viewModel.errorMessage {
+                ContentUnavailableView {
+                    Label(L10n.errorTitle, systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(message)
+                }
+                .background(.background)
+            }
+        }
         .navigationTitle(Text(L10n.cookbookTitle))
         .toolbar { sortMenu }
         // 詳細画面で削除して戻ったときに反映させるため、表示のたびに取り直す。
