@@ -59,6 +59,25 @@ final class RecipeEditorViewModel {
         }
     }
 
+    func addPhotos(_ images: [Data]) async {
+        guard !images.isEmpty else { return }
+        do {
+            draft.apply(try await editRecipe.addPhotos(dishID: dishID, images: images))
+            errorMessage = nil
+        } catch {
+            errorMessage = L10n.errorImageStorage
+        }
+    }
+
+    func removePhoto(id: UUID) async {
+        do {
+            draft.apply(try await editRecipe.removePhoto(dishID: dishID, photoID: id))
+            errorMessage = nil
+        } catch {
+            errorMessage = L10n.errorGeneric
+        }
+    }
+
     func removeLink(id: UUID) async {
         do {
             draft.apply(try await editRecipe.removeLink(dishID: dishID, linkID: id))

@@ -8,6 +8,7 @@ struct MealDishRowView: View {
     let entry: MealDishEntry
     let isExpanded: Bool
     @Bindable var draft: DishRecipeDraft
+    @Binding var name: String
     @FocusState.Binding var isEditingText: Bool
 
     let onToggle: () -> Void
@@ -23,20 +24,35 @@ struct MealDishRowView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             if isExpanded {
-                VStack(alignment: .leading, spacing: 20) {
-                    field(L10n.recipeIngredients, example: L10n.recipeIngredientsExample) {
+                // 作り方画面と同じ「見出しはカードの外、中身は白いカード」に
+                // 揃える。List の行の中なので Section は使えず、器だけ再現する。
+                VStack(alignment: .leading, spacing: 16) {
+                    // 打ち間違えた名前をここで直せるようにする。図鑑や過去の
+                    // 記録に出る名前もまとめて変わる。
+                    RecipeFieldCard(label: L10n.mealDetailDishName) {
+                        TextField("", text: $name)
+                            .focused($isEditingText)
+                    }
+
+                    RecipeFieldCard(
+                        label: L10n.recipeIngredients,
+                        example: L10n.recipeIngredientsExample
+                    ) {
                         TextField("", text: $draft.ingredients, axis: .vertical)
                             .lineLimit(3...10)
                             .focused($isEditingText)
                     }
 
-                    field(L10n.recipeSteps, example: L10n.recipeStepsExample) {
+                    RecipeFieldCard(
+                        label: L10n.recipeSteps,
+                        example: L10n.recipeStepsExample
+                    ) {
                         TextField("", text: $draft.steps, axis: .vertical)
                             .lineLimit(3...12)
                             .focused($isEditingText)
                     }
 
-                    field(L10n.recipePhotos, example: nil) {
+                    RecipeFieldCard(label: L10n.recipePhotos) {
                         RecipePhotoStrip(
                             photoIDs: draft.photoIDs,
                             onAdd: onAddPhotos,
@@ -44,7 +60,7 @@ struct MealDishRowView: View {
                         )
                     }
 
-                    linkField
+                    linkCard
                     historyLink
                 }
                 .padding(.top, 16)
@@ -119,36 +135,46 @@ struct MealDishRowView: View {
             .rotationEffect(.degrees(isExpanded ? 90 : 0))
     }
 
-    private var linkField: some View {
-        field(L10n.recipeLinks, example: nil) {
-            VStack(alignment: .leading, spacing: 10) {
+    /// 参考リンク。作り方画面の Section と同じく、欄ごとに区切り線を挟む。
+    private var linkCard: some View {
+        RecipeFieldCard(label: L10n.recipeLinks) {
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(draft.links) { link in
-                    RecipeLinkChip(link: link) { onRemoveLink(link.id) }
+                    HStack {
+                        Link(destination: link.url) {
+                            Label(link.displayName, systemImage: "link").lineLimit(1)
+                        }
+                        Spacer()
+                        Button {
+                            onRemoveLink(link.id)
+                        } label: {
+                            Image(systemName: "minus.circle.fill").foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(L10n.recipeLinkRemove(link.displayName)))
+                    }
+                    .padding(.vertical, 10)
+                    Divider()
                 }
 
-                HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        TextField(String(localized: L10n.recipeLinkURL), text: $draft.linkURL)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.URL)
-                            .focused($isEditingText)
-                        Divider()
-                        TextField(String(localized: L10n.recipeLinkName), text: $draft.linkTitle)
-                            .focused($isEditingText)
-                    }
+                TextField("https://…", text: $draft.linkURL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+                    .focused($isEditingText)
+                    .padding(.vertical, 10)
 
-                    Button(action: onAddLink) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .symbolRenderingMode(.hierarchical)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                Divider()
+
+                TextField(String(localized: L10n.recipeLinkName), text: $draft.linkTitle)
+                    .focused($isEditingText)
+                    .padding(.vertical, 10)
+
+                Divider()
+
+                Button(String(localized: L10n.recipeAddLink), action: onAddLink)
                     .disabled(!draft.canAddLink)
-                    .accessibilityLabel(Text(L10n.recipeAddLink))
-                }
+                    .padding(.vertical, 10)
             }
         }
     }
@@ -165,24 +191,5 @@ struct MealDishRowView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(Color.accentColor)
-    }
-
-    /// 見出しと中身を組にする。見出しは小さく添えるだけにして、
-    /// 入力そのものに視線が向くようにする。
-    private func field(
-        _ label: LocalizedStringResource,
-        example: LocalizedStringResource?,
-        @ViewBuilder content: () -> some View
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Text(label).font(.caption.weight(.semibold))
-                // 記入例は見出しの横に置く。入力欄の中に置くと、書いてある
-                // 内容との区別がつかない。
-                if let example { Text(example).font(.caption2) }
-            }
-            .foregroundStyle(.secondary)
-            content()
-        }
     }
 }

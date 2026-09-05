@@ -12,6 +12,16 @@ struct RecipeEditorView: View {
         Form {
             RecipeContentFields(draft: viewModel.draft)
 
+            // 記録画面で貼ったスクリーンショットをここでも見せる。レシピを
+            // 画像で残す使い方だと、これが無いと読めない。
+            Section(String(localized: L10n.recipePhotos)) {
+                RecipePhotoStrip(
+                    photoIDs: viewModel.draft.photoIDs,
+                    onAdd: { images in Task { await viewModel.addPhotos(images) } },
+                    onRemove: { id in Task { await viewModel.removePhoto(id: id) } }
+                )
+            }
+
             RecipeLinkFields(
                 draft: viewModel.draft,
                 onAdd: { Task { await viewModel.addLink() } },
@@ -33,59 +43,5 @@ struct RecipeEditorView: View {
             }
         }
         .task { await viewModel.load() }
-    }
-}
-
-/// 材料と手順。記録画面とこの画面で同じ書きかけを編集する。
-private struct RecipeContentFields: View {
-    @Bindable var draft: DishRecipeDraft
-
-    var body: some View {
-        Section(String(localized: L10n.recipeIngredients)) {
-            TextField("", text: $draft.ingredients, axis: .vertical)
-                .lineLimit(4...12)
-        }
-
-        Section(String(localized: L10n.recipeSteps)) {
-            TextField("", text: $draft.steps, axis: .vertical)
-                .lineLimit(4...16)
-        }
-    }
-}
-
-private struct RecipeLinkFields: View {
-    @Bindable var draft: DishRecipeDraft
-
-    let onAdd: () -> Void
-    let onRemove: (UUID) -> Void
-
-    var body: some View {
-        Section(String(localized: L10n.recipeLinks)) {
-            ForEach(draft.links) { link in
-                HStack {
-                    Link(destination: link.url) {
-                        Label(link.displayName, systemImage: "link")
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                    Button {
-                        onRemove(link.id)
-                    } label: {
-                        Image(systemName: "minus.circle.fill").foregroundStyle(.red)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text(L10n.recipeLinkRemove(link.displayName)))
-                }
-            }
-
-            TextField("https://…", text: $draft.linkURL)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(.URL)
-            TextField(String(localized: L10n.recipeLinkName), text: $draft.linkTitle)
-
-            Button(String(localized: L10n.recipeAddLink), action: onAdd)
-                .disabled(!draft.canAddLink)
-        }
     }
 }

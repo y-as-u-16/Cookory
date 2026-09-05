@@ -26,6 +26,26 @@ struct UpdateMealRecordUseCase: Sendable {
         return updated
     }
 
+    /// 料理の名前を変える。図鑑や過去の記録に出る名前もまとめて変わる。
+    ///
+    /// 同じ名前の料理が既にあるときは弾く。統合すると、統合前の履歴を
+    /// 元に戻せなくなる。
+    @discardableResult
+    func renameDish(id: UUID, to newName: DishName, now: Date = Date()) async throws -> Dish {
+        guard let dish = try await dishRepository.find(id: id) else {
+            throw DomainError.notFound(id: id)
+        }
+        guard dish.name != newName else { return dish }
+
+        if let existing = try await dishRepository.find(name: newName), existing.id != id {
+            throw DomainError.invalidInput(reason: "同じ名前の料理があります")
+        }
+
+        let updated = dish.renamed(to: newName, at: now)
+        try await dishRepository.save(updated)
+        return updated
+    }
+
     /// 調理履歴の評価とメモを書き換える。
     @discardableResult
     func updateLog(

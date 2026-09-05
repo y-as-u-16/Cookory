@@ -7,12 +7,18 @@ struct CalendarView: View {
     @State private var isConfirmingDelete = false
 
     private let onSelectMeal: (UUID) -> Void
+    private let onRecord: () -> Void
 
     private static let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
-    init(viewModel: CalendarViewModel, onSelectMeal: @escaping (UUID) -> Void) {
+    init(
+        viewModel: CalendarViewModel,
+        onSelectMeal: @escaping (UUID) -> Void,
+        onRecord: @escaping () -> Void
+    ) {
         _viewModel = State(wrappedValue: viewModel)
         self.onSelectMeal = onSelectMeal
+        self.onRecord = onRecord
     }
 
     var body: some View {
@@ -148,6 +154,18 @@ struct CalendarView: View {
     private var selectedDaySection: some View {
         if viewModel.selectedDate != nil {
             Section {
+                // 日を見て「作ったのに残していない」と気づく場所。そこから
+                // すぐ記録できないと、ホームまで戻る手間で書かなくなる。
+                Button(action: onRecord) {
+                    Label(L10n.homeRecordButton, systemImage: "plus.circle.fill")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .listRowSeparator(.hidden)
+
                 if viewModel.selectedDayMeals.isEmpty {
                     Text(L10n.calendarNoRecord)
                         .font(.footnote)
