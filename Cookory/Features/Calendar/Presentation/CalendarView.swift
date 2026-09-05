@@ -30,6 +30,9 @@ struct CalendarView: View {
         // カレンダーを行として入れると、区切り線・余白・背景をすべて打ち消す
         // 必要があった。List の外に出せばその打ち消しが要らない。
         .safeAreaInset(edge: .top, spacing: 0) { calendarHeader }
+        // 日を見て「作ったのに残していない」と気づく場所。そこからすぐ
+        // 記録できないと、ホームまで戻る手間で書かなくなる。
+        .overlay(alignment: .bottomTrailing) { recordButton }
         .navigationTitle(Text(L10n.calendarTitle))
         .navigationBarTitleDisplayMode(.inline)
         // List の行に置くと、行タップがボタンを吸収して個別に反応しない。
@@ -53,6 +56,21 @@ struct CalendarView: View {
         } message: { _ in
             Text(L10n.mealDetailDeleteMessage)
         }
+    }
+
+    private var recordButton: some View {
+        Button(action: onRecord) {
+            Image(systemName: "plus")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(Color.accentColor))
+                .shadow(radius: 6, y: 3)
+        }
+        .padding(.trailing, 20)
+        // タブバーに重ねない。押そうとしてタブを踏む。
+        .padding(.bottom, 24)
+        .accessibilityLabel(Text(L10n.homeRecordButton))
     }
 
     private var calendarHeader: some View {
@@ -154,34 +172,28 @@ struct CalendarView: View {
     private var selectedDaySection: some View {
         if viewModel.selectedDate != nil {
             Section {
-                // 日を見て「作ったのに残していない」と気づく場所。そこから
-                // すぐ記録できないと、ホームまで戻る手間で書かなくなる。
-                Button(action: onRecord) {
-                    Label(L10n.homeRecordButton, systemImage: "plus.circle.fill")
-                        .font(.body.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
-                .listRowSeparator(.hidden)
-
                 if viewModel.selectedDayMeals.isEmpty {
                     Text(L10n.calendarNoRecord)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .listRowSeparator(.hidden)
                 } else {
-                    ForEach(viewModel.selectedDayMeals) { meal in
-                        Button { onSelectMeal(meal.id) } label: {
-                            MealRowView(meal: meal)
-                                .padding(.vertical, 4)
+                    ForEach(viewModel.selectedDayMeals) { entry in
+                        Button { onSelectMeal(entry.id) } label: {
+                            // 日付だけでは何を作った日か分からない。
+                            MealRowView(
+                                meal: entry.meal,
+                                title: entry.dishNames.isEmpty
+                                    ? nil
+                                    : entry.dishNames.joined(separator: "・")
+                            )
+                            .padding(.vertical, 4)
                         }
                         .buttonStyle(.plain)
                         // 端まで払っただけで消えると事故になる。確認を必ず通す。
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
-                                pendingDeletion = meal.id
+                                pendingDeletion = entry.id
                                 isConfirmingDelete = true
                             } label: {
                                 Label(L10n.mealDetailDelete, systemImage: "trash")

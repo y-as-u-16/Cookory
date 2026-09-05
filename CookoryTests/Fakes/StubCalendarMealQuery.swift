@@ -4,7 +4,7 @@ import Foundation
 /// テスト用の CalendarMealQuery。返す値を直接指定する。
 actor StubCalendarMealQuery: CalendarMealQuery {
     private var summariesByMonth: [String: [CalendarDaySummary]] = [:]
-    private var mealsByDay: [Date: [MealRecord]] = [:]
+    private var mealsByDay: [Date: [CalendarMeal]] = [:]
     private var errorToThrow: DomainError?
 
     func daySummaries(
@@ -14,7 +14,7 @@ actor StubCalendarMealQuery: CalendarMealQuery {
         return summariesByMonth["\(year)-\(month)"] ?? []
     }
 
-    func meals(on date: Date, calendar: Calendar) async throws -> [MealRecord] {
+    func meals(on date: Date, calendar: Calendar) async throws -> [CalendarMeal] {
         if let errorToThrow { throw errorToThrow }
         return mealsByDay[calendar.startOfDay(for: date)] ?? []
     }
@@ -23,7 +23,11 @@ actor StubCalendarMealQuery: CalendarMealQuery {
         summariesByMonth["\(year)-\(month)"] = summaries
     }
 
-    func setMeals(_ meals: [MealRecord], on day: Date) {
+    func setMeals(_ meals: [MealRecord], on day: Date, dishNames: [String] = []) {
+        mealsByDay[day] = meals.map { CalendarMeal(meal: $0, dishNames: dishNames) }
+    }
+
+    func setCalendarMeals(_ meals: [CalendarMeal], on day: Date) {
         mealsByDay[day] = meals
     }
 

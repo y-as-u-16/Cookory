@@ -5,7 +5,7 @@ import Observation
 @Observable
 final class CalendarViewModel {
     private(set) var summaries: [CalendarDaySummary] = []
-    private(set) var selectedDayMeals: [MealRecord] = []
+    private(set) var selectedDayMeals: [CalendarMeal] = []
     private(set) var selectedDate: Date?
     private(set) var errorMessage: LocalizedStringResource?
 
