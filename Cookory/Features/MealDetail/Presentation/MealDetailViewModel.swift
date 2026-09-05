@@ -23,6 +23,9 @@ final class MealDetailViewModel {
 
     private var recipeDrafts: [UUID: DishRecipeDraft] = [:]
 
+    /// 書き換え中の料理名。保存済みの名前と違うものだけを持つ。
+    private var dishNameDrafts: [UUID: String] = [:]
+
     private let mealID: UUID
     private let getMealDetail: GetMealDetailUseCase
     private let updateMealRecord: UpdateMealRecordUseCase
@@ -63,7 +66,31 @@ final class MealDetailViewModel {
 
     /// 保存されていない変更があるか。保存ボタンの有効・無効に使う。
     var hasUnsavedChanges: Bool {
-        noteDraft != (detail?.meal.note ?? "") || recipeDrafts.values.contains { $0.isDirty }
+        noteDraft != (detail?.meal.note ?? "")
+            || recipeDrafts.values.contains { $0.isDirty }
+            || !dishNameDrafts.isEmpty
+    }
+
+    /// 書き換え中の料理名。触っていなければ保存済みの名前をそのまま返す。
+    func dishName(for dishID: UUID) -> String {
+        dishNameDrafts[dishID]
+            ?? detail?.dishes.first { $0.dish.id == dishID }?.dish.name.value
+            ?? ""
+    }
+
+    func setDishName(_ name: String, for dishID: UUID) {
+        let saved = detail?.dishes.first { $0.dish.id == dishID }?.dish.name.value
+        // 元に戻したら下書きを捨てる。空の変更で保存ボタンが有効にならないように。
+        if name == saved {
+            dishNameDrafts.removeValue(forKey: dishID)
+        } else {
+            dishNameDrafts[dishID] = name
+        }
+    }
+
+    /// 名前として成立しない入力のまま保存させない。
+    func canSaveDishName(for dishID: UUID) -> Bool {
+        dishNameDrafts[dishID].map { DishName($0) != nil } ?? true
     }
 
     func load() async {
@@ -89,6 +116,13 @@ final class MealDetailViewModel {
             try await updateMealRecord.updateMeal(
                 id: mealID, mealType: mealTypeDraft, note: noteDraft
             )
+            for (dishID, name) in dishNameDrafts {
+                guard let newName = DishName(name) else {
+                    throw DomainError.invalidInput(reason: "料理名が入力されていません")
+                }
+                try await updateMealRecord.renameDish(id: dishID, to: newName)
+            }
+            dishNameDrafts.removeAll()
             // 開いただけの料理まで保存すると、書いていないのに更新日時が動く。
             for dishID in recipeDrafts.keys where recipeDraft(for: dishID).isDirty {
                 let draft = recipeDraft(for: dishID)
@@ -98,6 +132,9 @@ final class MealDetailViewModel {
             }
             errorMessage = nil
             await load()
+        } catch DomainError.invalidInput(let reason) {
+            // 名前の重複や空欄は理由が言える。保存失敗で潰すと直しようがない。
+            errorMessage = LocalizedStringResource(stringLiteral: reason)
         } catch {
             errorMessage = L10n.errorSave
         }

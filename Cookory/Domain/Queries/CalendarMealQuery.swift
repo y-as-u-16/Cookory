@@ -11,7 +11,16 @@ protocol CalendarMealQuery: Sendable {
     func daySummaries(year: Int, month: Int, calendar: Calendar) async throws -> [CalendarDaySummary]
 
     /// 指定した日の記録を返す。
-    func meals(on date: Date, calendar: Calendar) async throws -> [MealRecord]
+    func meals(on date: Date, calendar: Calendar) async throws -> [CalendarMeal]
+}
+
+/// 一覧に出す 1 件。何を作った日かは料理名でしか分からないため、
+/// 記録本体と一緒に返す。
+struct CalendarMeal: Equatable, Sendable, Identifiable {
+    let meal: MealRecord
+    let dishNames: [String]
+
+    var id: UUID { meal.id }
 }
 
 /// カレンダーの 1 マス分。

@@ -112,7 +112,8 @@ private struct TabStack: View {
                     query: container.calendarMealQuery,
                     deleteMealRecord: container.deleteMealRecord
                 ),
-                onSelectMeal: { router.push(.mealDetail($0)) }
+                onSelectMeal: { router.push(.mealDetail($0)) },
+                onRecord: { router.push(.capture) }
             )
             .toolbar { settingsButton }
         case .cookbook:
@@ -177,7 +178,8 @@ private struct TabStack: View {
                     deleteMealRecord: container.deleteMealRecord,
                     now: month
                 ),
-                onSelectMeal: { router.push(.mealDetail($0)) }
+                onSelectMeal: { router.push(.mealDetail($0)) },
+                onRecord: { router.push(.capture) }
             )
         case .cookbook:
             CookbookView(

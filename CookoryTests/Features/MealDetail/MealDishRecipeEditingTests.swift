@@ -160,6 +160,63 @@ struct MealDishRecipeEditingTests {
         #expect(viewModel.recipeDraft(for: dishID).links.isEmpty)
     }
 
+    @Test func 料理名を書き換えられる() async throws {
+        let meals = InMemoryMealRecordRepository()
+        let dishes = InMemoryDishRepository()
+        let meal = try await seedMeal(into: meals)
+        let viewModel = make(mealID: meal.id, meals: meals, dishes: dishes)
+        await viewModel.load()
+        viewModel.dishNameDraft = "肉ジャガ"
+        await viewModel.addDish()
+        let dishID = try #require(viewModel.detail?.dishes.first?.dish.id)
+
+        viewModel.setDishName("肉じゃが", for: dishID)
+        #expect(viewModel.hasUnsavedChanges)
+        await viewModel.saveAll()
+
+        #expect(try await dishes.find(id: dishID)?.name.value == "肉じゃが")
+    }
+
+    /// 統合すると、統合前の履歴を元に戻せなくなる。
+    @Test func 既にある名前には変えられない() async throws {
+        let meals = InMemoryMealRecordRepository()
+        let dishes = InMemoryDishRepository()
+        let meal = try await seedMeal(into: meals)
+        let viewModel = make(mealID: meal.id, meals: meals, dishes: dishes)
+        await viewModel.load()
+        viewModel.dishNameDraft = "唐揚げ"
+        await viewModel.addDish()
+        viewModel.dishNameDraft = "肉じゃが"
+        await viewModel.addDish()
+        let karaage = try #require(
+            viewModel.detail?.dishes.first { $0.dish.name.value == "唐揚げ" }?.dish.id
+        )
+
+        viewModel.setDishName("肉じゃが", for: karaage)
+        await viewModel.saveAll()
+
+        #expect(viewModel.errorMessage != nil)
+        #expect(try await dishes.find(id: karaage)?.name.value == "唐揚げ")
+    }
+
+    /// 元に戻したら変更として数えない。空の変更で保存ボタンが有効にならないように。
+    @Test func 名前を元に戻すと未保存の印が消える() async throws {
+        let meals = InMemoryMealRecordRepository()
+        let meal = try await seedMeal(into: meals)
+        let viewModel = make(mealID: meal.id, meals: meals)
+        await viewModel.load()
+        viewModel.dishNameDraft = "唐揚げ"
+        await viewModel.addDish()
+        let dishID = try #require(viewModel.detail?.dishes.first?.dish.id)
+
+        viewModel.setDishName("から揚げ", for: dishID)
+        #expect(viewModel.hasUnsavedChanges)
+
+        viewModel.setDishName("唐揚げ", for: dishID)
+
+        #expect(!viewModel.hasUnsavedChanges)
+    }
+
     /// 材料も手順もリンクも空なら、レシピは作らない。
     @Test func 空のレシピは保存されない() async throws {
         let meals = InMemoryMealRecordRepository()

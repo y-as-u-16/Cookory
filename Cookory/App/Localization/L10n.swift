@@ -67,6 +67,7 @@ enum L10n {
     static var mealDetailDishesSection: LocalizedStringResource { t("mealDetail.section.dishes") }
     static var mealDetailAddDish: LocalizedStringResource { t("mealDetail.field.addDish") }
     static var mealDetailAdd: LocalizedStringResource { t("mealDetail.button.add") }
+    static var mealDetailDishName: LocalizedStringResource { t("mealDetail.field.dishName") }
     static var mealDetailNoteSection: LocalizedStringResource { t("mealDetail.section.note") }
     static var mealDetailNote: LocalizedStringResource { t("mealDetail.field.note") }
     static var mealDetailSave: LocalizedStringResource { t("mealDetail.button.save") }

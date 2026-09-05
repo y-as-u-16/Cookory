@@ -44,16 +44,42 @@ struct SwiftDataCalendarMealQuery: CalendarMealQuery {
             .sorted { $0.date < $1.date }
     }
 
-    func meals(on date: Date, calendar: Calendar) async throws -> [MealRecord] {
+    func meals(on date: Date, calendar: Calendar) async throws -> [CalendarMeal] {
         let start = calendar.startOfDay(for: date)
         guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
 
         return try await withPersistenceError {
-            try await store.perform { context in
-                try context.fetch(FetchDescriptor<MealRecordModel>(
+            try await store.perform { context -> [CalendarMeal] in
+                let meals = try context.fetch(FetchDescriptor<MealRecordModel>(
                     predicate: #Predicate { $0.occurredAt >= start && $0.occurredAt < end },
                     sortBy: [SortDescriptor(\.occurredAt)]
-                )).map { $0.toDomain() }
+                ))
+                guard !meals.isEmpty else { return [] }
+
+                // 記録ごとに履歴を引くと件数ぶんクエリが飛ぶ。まとめて読む。
+                let mealIDs = Set(meals.map(\.id))
+                let logs = try context.fetch(FetchDescriptor<DishLogModel>(
+                    predicate: #Predicate { mealIDs.contains($0.mealRecordID) },
+                    sortBy: [SortDescriptor(\.cookedAt)]
+                ))
+
+                let dishIDs = Set(logs.map(\.dishID))
+                let dishes = try context.fetch(FetchDescriptor<DishModel>(
+                    predicate: #Predicate { dishIDs.contains($0.id) }
+                ))
+                let nameByDish = Dictionary(
+                    dishes.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first }
+                )
+
+                var namesByMeal: [UUID: [String]] = [:]
+                for log in logs {
+                    guard let name = nameByDish[log.dishID] else { continue }
+                    namesByMeal[log.mealRecordID, default: []].append(name)
+                }
+
+                return meals.map {
+                    CalendarMeal(meal: $0.toDomain(), dishNames: namesByMeal[$0.id] ?? [])
+                }
             }
         }
     }

@@ -13,9 +13,13 @@ struct MealHeroCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PhotoImageView(photoID: recent.meal.photoIDs.first, size: .hero)
-                .aspectRatio(Self.aspectRatio, contentMode: .fill)
-                .frame(maxWidth: .infinity)
+            // 縦で撮った写真をそのまま出すと画面を埋め、記録ボタンが
+            // スクロールしないと出てこない。枠を先に決めて中身を収める。
+            Color.clear
+                .aspectRatio(Self.aspectRatio, contentMode: .fit)
+                .overlay {
+                    PhotoImageView(photoID: recent.meal.photoIDs.first, size: .hero)
+                }
                 .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
                 .overlay(alignment: .topTrailing) {
                     if recent.meal.photoIDs.count > 1 {

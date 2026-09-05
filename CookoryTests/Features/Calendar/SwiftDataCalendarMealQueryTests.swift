@@ -120,6 +120,44 @@ struct SwiftDataCalendarMealQueryTests {
         #expect(result.count == 1)
     }
 
+    /// 日付だけでは何を作った日か分からない。一覧に名前を出すために返す。
+    @Test func 記録に料理名が付く() async throws {
+        let store = try SwiftDataStore.makeInMemory()
+        let query = SwiftDataCalendarMealQuery(store: store)
+        let meals = SwiftDataMealRecordRepository(store: store)
+        let dishes = SwiftDataDishRepository(store: store)
+
+        let target = try date("2026-08-05 12:00", in: tokyo)
+        let meal = MealRecord(occurredAt: target)
+        try await meals.save(meal)
+
+        let nikujaga = Dish(name: try #require(DishName("肉じゃが")))
+        let salad = Dish(name: try #require(DishName("サラダ")))
+        try await dishes.save(nikujaga)
+        try await dishes.save(salad)
+        try await dishes.save(
+            DishLog(dishID: nikujaga.id, mealRecordID: meal.id, cookedAt: target)
+        )
+        try await dishes.save(
+            DishLog(dishID: salad.id, mealRecordID: meal.id, cookedAt: target)
+        )
+
+        let result = try await query.meals(on: target, calendar: tokyo)
+
+        #expect(result.count == 1)
+        #expect(Set(try #require(result.first).dishNames) == ["肉じゃが", "サラダ"])
+    }
+
+    @Test func 料理を紐づけていない記録は名前が空になる() async throws {
+        let (query, meals) = try make()
+        let target = try date("2026-08-05 12:00", in: tokyo)
+        try await meals.save(MealRecord(occurredAt: target))
+
+        let result = try await query.meals(on: target, calendar: tokyo)
+
+        #expect(try #require(result.first).dishNames.isEmpty)
+    }
+
     @Test func 日の境界は0時から24時までになる() async throws {
         let (query, meals) = try make()
         try await meals.save(MealRecord(occurredAt: try date("2026-08-05 00:00", in: tokyo)))

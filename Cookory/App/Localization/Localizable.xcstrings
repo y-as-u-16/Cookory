@@ -369,6 +369,22 @@
         }
       }
     },
+    "mealDetail.field.dishName": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "料理名"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dish name"
+          }
+        }
+      }
+    },
     "mealDetail.field.note": {
       "localizations": {
         "ja": {

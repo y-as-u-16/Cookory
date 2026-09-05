@@ -96,6 +96,10 @@ struct MealDetailView: View {
                     entry: entry,
                     isExpanded: viewModel.isExpanded(dishID: entry.dish.id),
                     draft: viewModel.recipeDraft(for: entry.dish.id),
+                    name: Binding(
+                        get: { viewModel.dishName(for: entry.dish.id) },
+                        set: { viewModel.setDishName($0, for: entry.dish.id) }
+                    ),
                     isEditingText: $isEditingText,
                     onToggle: {
                         Task { await viewModel.toggleExpansion(dishID: entry.dish.id) }
@@ -157,26 +161,42 @@ struct MealDetailView: View {
                 isEditingText = false
                 Task { await viewModel.saveAll() }
             } label: {
+                // 高さは行に任せる。数値で合わせると Dynamic Type や
+                // OS 更新で削除ボタンと揃わなくなる。
                 Text(L10n.mealDetailSave)
                     .fontWeight(.semibold)
+                    .foregroundStyle(viewModel.hasUnsavedChanges ? Color.white : Color.secondary)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
             .disabled(!viewModel.hasUnsavedChanges)
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-        } footer: {
+            // 主要な操作はこの画面で保存だけ。塗りつぶしは 1 つに絞る。
+            // buttonStyle ではなく行の背景を変え、削除ボタンと高さを揃える。
+            .listRowBackground(
+                viewModel.hasUnsavedChanges ? Color.accentColor : Color(.secondarySystemGroupedBackground)
+            )
+
+            // 未保存の注記は Section の footer にしない。変更が無いときも
+            // 空の footer が高さを取り、削除ボタンとの間が空く。
             if viewModel.hasUnsavedChanges {
                 Text(L10n.mealDetailUnsavedHint)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
     }
 
     private var deleteSection: some View {
         Section {
-            Button(String(localized: L10n.mealDetailDelete), role: .destructive) {
+            // 破壊的操作は中央に寄せる。左寄せだと項目のラベルに見え、
+            // 押せることが伝わらない（設定・連絡先などの純正アプリに倣う）。
+            Button(role: .destructive) {
                 isConfirmingDelete = true
+            } label: {
+                Text(L10n.mealDetailDelete)
+                    .frame(maxWidth: .infinity)
             }
         }
+        // 保存の直下に置く。標準の節間だと同じ操作群に見えないほど離れる。
+        .listSectionSpacing(8)
     }
 }

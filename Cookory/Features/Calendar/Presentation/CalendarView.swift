@@ -7,12 +7,18 @@ struct CalendarView: View {
     @State private var isConfirmingDelete = false
 
     private let onSelectMeal: (UUID) -> Void
+    private let onRecord: () -> Void
 
     private static let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
-    init(viewModel: CalendarViewModel, onSelectMeal: @escaping (UUID) -> Void) {
+    init(
+        viewModel: CalendarViewModel,
+        onSelectMeal: @escaping (UUID) -> Void,
+        onRecord: @escaping () -> Void
+    ) {
         _viewModel = State(wrappedValue: viewModel)
         self.onSelectMeal = onSelectMeal
+        self.onRecord = onRecord
     }
 
     var body: some View {
@@ -24,6 +30,9 @@ struct CalendarView: View {
         // カレンダーを行として入れると、区切り線・余白・背景をすべて打ち消す
         // 必要があった。List の外に出せばその打ち消しが要らない。
         .safeAreaInset(edge: .top, spacing: 0) { calendarHeader }
+        // 日を見て「作ったのに残していない」と気づく場所。そこからすぐ
+        // 記録できないと、ホームまで戻る手間で書かなくなる。
+        .overlay(alignment: .bottomTrailing) { recordButton }
         .navigationTitle(Text(L10n.calendarTitle))
         .navigationBarTitleDisplayMode(.inline)
         // List の行に置くと、行タップがボタンを吸収して個別に反応しない。
@@ -49,6 +58,21 @@ struct CalendarView: View {
         }
     }
 
+    private var recordButton: some View {
+        Button(action: onRecord) {
+            Image(systemName: "plus")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(Color.accentColor))
+                .shadow(radius: 6, y: 3)
+        }
+        .padding(.trailing, 20)
+        // タブバーに重ねない。押そうとしてタブを踏む。
+        .padding(.bottom, 24)
+        .accessibilityLabel(Text(L10n.homeRecordButton))
+    }
+
     private var calendarHeader: some View {
         VStack(spacing: 20) {
             weekdayHeader
@@ -61,6 +85,24 @@ struct CalendarView: View {
         .padding(.vertical, 8)
         // 記録の一覧がこの下をスクロールするため、地を敷いて透けを防ぐ。
         .background(.bar)
+        // カレンダー部分は List の外にあるため、行の swipeActions とは競合しない。
+        .gesture(monthSwipe)
+    }
+
+    /// 横に払って月を移す。縦の動きが大きいときは一覧のスクロールとして扱う。
+    private var monthSwipe: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                let horizontal = value.translation.width
+                guard abs(horizontal) > abs(value.translation.height) else { return }
+                Task {
+                    if horizontal < 0 {
+                        await viewModel.showNextMonth()
+                    } else {
+                        await viewModel.showPreviousMonth()
+                    }
+                }
+            }
     }
 
     @ToolbarContentBuilder
@@ -136,16 +178,22 @@ struct CalendarView: View {
                         .foregroundStyle(.secondary)
                         .listRowSeparator(.hidden)
                 } else {
-                    ForEach(viewModel.selectedDayMeals) { meal in
-                        Button { onSelectMeal(meal.id) } label: {
-                            MealRowView(meal: meal)
-                                .padding(.vertical, 4)
+                    ForEach(viewModel.selectedDayMeals) { entry in
+                        Button { onSelectMeal(entry.id) } label: {
+                            // 日付だけでは何を作った日か分からない。
+                            MealRowView(
+                                meal: entry.meal,
+                                title: entry.dishNames.isEmpty
+                                    ? nil
+                                    : entry.dishNames.joined(separator: "・")
+                            )
+                            .padding(.vertical, 4)
                         }
                         .buttonStyle(.plain)
                         // 端まで払っただけで消えると事故になる。確認を必ず通す。
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
-                                pendingDeletion = meal.id
+                                pendingDeletion = entry.id
                                 isConfirmingDelete = true
                             } label: {
                                 Label(L10n.mealDetailDelete, systemImage: "trash")
